@@ -1,0 +1,13 @@
+# 常用功能
+name: firebase 数据库分析
+description: 行为分析, 数据分析, 操作记录分析
+address: https://www.baidu.com
+
+name: firebase 数据库分析
+description: 行为分析, 数据分析, 操作记录分析
+address: /a.html
+
+ # 更多功能
+name: 待开发
+description: placeholder
+address: https://www.github.com

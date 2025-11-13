@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>isekia</title>
+    <style>
+        /* 全局楷体设置 */
+        body, #sidebar, #content, .module h2, .button-name, .button-description, .button-address, .nav-item {
+            font-family: "STHeiti","STKaiTi", "楷体", "KaiTi",  serif;
+        }
+
+        body {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            line-height: 1.5;
+        }
+        #sidebar {
+            width: 180px;
+            background-color: #f1f8e9;
+            padding: 15px 10px;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        #sidebar h3 {
+            margin: 0 0 12px 0;
+            color: #1b5e20;
+            text-align: center;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #c8e6c9;
+            font-size: 16px;
+        }
+        .nav-item {
+            padding: 6px 8px;
+            margin: 4px 0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        .nav-item:hover {
+            background-color: #c8e6c9;
+        }
+        .nav-item.active {
+            background-color: #a5d6a7;
+            font-weight: bold;
+        }
+        .nav-item::before {
+            content: attr(data-index) ". ";
+            color: #689f38;
+            font-weight: bold;
+        }
+        #content {
+            flex: 1;
+            padding: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 10px;
+        }
+        .module {
+            width: 100%;
+            margin-bottom: 15px;
+            background-color: #f1f8e9;
+            padding: 12px;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            scroll-margin-top: 20px; /* 为锚点滚动添加偏移 */
+        }
+        .module h2 {
+            margin: 0 0 12px 0;
+            color: #1b5e20;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #c8e6c9;
+            font-size: 16px;
+        }
+        .button-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .button-item {
+            width: calc(25% - 8px);
+            min-width: 200px;
+            background-color: white;
+            border: 1px solid #c8e6c9;
+            border-radius: 4px;
+            padding: 8px 10px;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+            position: relative;
+        }
+        .button-item:hover {
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
+        }
+        .button-name {
+            font-weight: bold;
+            color: #2e7d32;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+        .button-description {
+            color: #689f38;
+            font-size: 12px;
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+        .button-address {
+            color: #43a047;
+            font-size: 12px;
+            word-break: break-all;
+            display: none;
+            position: absolute;
+            background-color: white;
+            padding: 8px;
+            border: 1px solid #c8e6c9;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 10;
+            width: calc(100% - 20px);
+            left: 8px;
+            top: 100%;
+        }
+        .button-item:hover .button-address {
+            display: block;
+        }
+        @media (max-width: 1200px) {
+            .button-item {
+                width: calc(33.33% - 8px);
+            }
+        }
+        @media (max-width: 900px) {
+            .button-item {
+                width: calc(50% - 8px);
+            }
+        }
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            #sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                padding: 10px;
+            }
+            #content {
+                padding: 10px;
+            }
+            .button-item {
+                width: 100%;
+            }
+            .button-address {
+                position: static;
+                display: block;
+                margin-top: 8px;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <h3>目录导航</h3>
+        <div id="nav-items"></div>
+    </div>
+    <div id="content"></div>
+
+    <script>
+        async function fetchMenu() {
+            try {
+                const response = await fetch('menu.txt');
+                if (!response.ok) {
+                    throw new Error('无法加载菜单文件: ' + response.statusText);
+                }
+                const text = await response.text();
+                parseMenu(text);
+            } catch (error) {
+                console.error('加载菜单时出错:', error);
+                document.getElementById('content').innerHTML =
+                    '<div style="color:#d32f2f;padding:15px;">加载菜单失败，请检查menu.txt文件是否存在</div>';
+            }
+        }
+
+        function parseMenu(text) {
+            const lines = text.split('\n');
+            let currentModule = null;
+            let menuContent = document.getElementById('content');
+            let navItems = document.getElementById('nav-items');
+            let moduleContainer = null;
+            let buttonIndex = 0;
+            let moduleIndex = 0;
+
+            // 存储模块信息用于滚动定位
+            const moduleElements = [];
+
+            lines.forEach((line, index) => {
+                line = line.trim();
+                if (line.startsWith('#')) {
+                    moduleIndex++;
+                    // 创建新模块
+                    currentModule = line.substring(1).trim();
+                    moduleContainer = document.createElement('div');
+                    moduleContainer.className = 'module';
+                    const moduleId = `module-${moduleIndex}`;
+                    moduleContainer.id = moduleId;
+
+                    const moduleTitle = document.createElement('h2');
+                    moduleTitle.textContent = currentModule;
+                    moduleContainer.appendChild(moduleTitle);
+
+                    const buttonContainer = document.createElement('div');
+                    buttonContainer.className = 'button-container';
+                    moduleContainer.appendChild(buttonContainer);
+
+                    menuContent.appendChild(moduleContainer);
+                    buttonIndex = 0;
+
+                    // 存储模块元素
+                    moduleElements.push({
+                        id: moduleId,
+                        element: moduleContainer,
+                        title: currentModule
+                    });
+
+                    // 添加导航项
+                    const navItem = document.createElement('div');
+                    navItem.className = 'nav-item';
+                    navItem.textContent = currentModule;
+                    navItem.dataset.index = moduleIndex;
+                    navItem.addEventListener('click', () => {
+                        // 移除所有active类
+                        document.querySelectorAll('.nav-item').forEach(item => {
+                            item.classList.remove('active');
+                        });
+                        // 添加当前active类
+                        navItem.classList.add('active');
+
+                        // 使用scrollIntoView的现代方式
+                        const target = document.getElementById(moduleId);
+                        if (target) {
+                            const topOffset = 20; // 与scroll-margin-top保持一致
+                            const elementPosition = target.getBoundingClientRect().top;
+                            const offsetPosition = elementPosition + window.pageYOffset - topOffset;
+
+                            window.scrollTo({
+                                top: offsetPosition,
+                                behavior: 'smooth'
+                            });
+                        }
+                    });
+                    navItems.appendChild(navItem);
+
+                } else if (line.startsWith('name:') && moduleContainer) {
+                    buttonIndex++;
+                    // 创建按钮项
+                    const buttonItem = document.createElement('div');
+                    buttonItem.className = 'button-item';
+
+                    // 添加按钮名称
+                    const buttonName = document.createElement('div');
+                    buttonName.className = 'button-name';
+                    buttonName.textContent = `${buttonIndex}. ${line.substring(5).trim()}`;
+                    buttonItem.appendChild(buttonName);
+
+                    // 添加描述
+                    const descriptionLine = lines[index + 1];
+                    if (descriptionLine && descriptionLine.startsWith('description:')) {
+                        const description = document.createElement('div');
+                        description.className = 'button-description';
+                        description.textContent = descriptionLine.substring(12).trim();
+                        buttonItem.appendChild(description);
+                    }
+
+                    // 添加地址（默认隐藏，悬停显示）
+                    const addressLine = lines[index + 2];
+                    if (addressLine && addressLine.startsWith('address:')) {
+                        const address = document.createElement('div');
+                        address.className = 'button-address';
+                        address.textContent = `链接: ${addressLine.substring(8).trim()}`;
+                        buttonItem.appendChild(address);
+
+                        // 设置点击事件
+                        buttonItem.style.cursor = 'pointer';
+                        buttonItem.addEventListener('click', () => {
+                            window.open(addressLine.substring(8).trim(), '_blank');
+                        });
+                    }
+
+                    // 添加到按钮容器
+                    moduleContainer.querySelector('.button-container').appendChild(buttonItem);
+                }
+            });
+
+            // 默认高亮第一个导航项
+            if (navItems.firstChild) {
+                navItems.firstChild.classList.add('active');
+
+                // 首次加载时滚动到顶部
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            }
+        }
+
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', fetchMenu);
+    </script>
+</body>
+</html>
+
+<!--现在需要开发一个h5网页, 实现以下需求-->
+<!--1. 解析同级目录下的一个名为menu.txt的文本文件, 来渲染html页面-->
+<!--2. txt文件结构说明:-->
+<!--	- '#'开头的的内容则为一个单独是模块, 这个需要设置为按钮标题-->
+<!--	- 接下来就是有一个个小的子项组成:-->
+<!--	  name后边的内容代表这个按钮的名字-->
+<!--	  description后边的内容是对这个按钮的功能说明,需要显示在按钮下方进一步说明-->
+<!--	  address后边的内容是点击按钮后跳转到新网页的地址-->
+<!--	- 每个'#'下边的内容的每一个子项, 需要在按钮标题前增加一个序号数字, 代表这个按钮是这个模块下的第几个-->
+<!--3. 整体风格: 简约, 护眼-->
+<!--4. 每一个子菜单模块占用的空间小一点, 方便尽可能多的展示更多的功能-->
