@@ -1332,7 +1332,8 @@ function parseJsonData(jsonData) {
                 if (!event.event_name || !event.timestamp) return;
                 
                 const eventTime = event.timestamp;
-                if (eventTime < startTime || eventTime > endTime) return;
+                // 页面事件不卡用户选择的时间区间
+                // if (eventTime < startTime || eventTime > endTime) return; 
 
                 userStats.events.push({
                     type: 'vc_event',
