@@ -13,12 +13,12 @@ address: childs/firebase_json_parse.html
 
 name: 详细开发文档
 description: doc
-address: /firebase_doc.html
+address: childs/firebase_doc.html
 
 
 name: 生成测试数据库
 description: 创建测试数据
-address: /firebase_json_generate.html
+address: childs/firebase_json_generate.html
 
 
  # 更多功能
