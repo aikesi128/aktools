@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>映射处理工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        // 单词库（700+单词，分类型确保多样性）
+        const WORD_LIBRARY = [
+            // 名词（400+）
+            "apple", "banana", "cat", "dog", "tree", "book", "pen", "computer", "phone", "screen",
+            "button", "mouse", "keyboard", "speaker", "headphone", "battery", "charger", "cable", "case", "bag",
+            "desk", "chair", "lamp", "clock", "watch", "glass", "cup", "plate", "bowl", "fork",
+            "knife", "spoon", "food", "water", "milk", "juice", "coffee", "tea", "bread", "rice",
+            "meat", "fish", "egg", "vegetable", "fruit", "flower", "grass", "mountain", "river", "lake",
+            "sea", "sky", "sun", "moon", "star", "cloud", "wind", "rain", "snow", "fire",
+            "earth", "air", "stone", "sand", "wood", "metal", "plastic", "paper", "ink", "paint",
+            "color", "shape", "size", "weight", "length", "width", "height", "depth", "time", "space",
+            "number", "letter", "word", "sentence", "paragraph", "page", "story", "song", "music", "art",
+            "photo", "video", "film", "game", "sport", "exercise", "travel", "work", "study", "school",
+            "college", "university", "teacher", "student", "doctor", "nurse", "patient", "lawyer", "police", "fireman",
+            "artist", "musician", "writer", "poet", "actor", "actress", "director", "producer", "engineer", "scientist",
+            "mathematician", "physicist", "chemist", "biologist", "astronomer", "geologist", "historian", "philosopher", "psychologist", "sociologist",
+            "anthropologist", "linguist", "translator", "editor", "journalist", "reporter", "photographer", "designer", "developer", "programmer",
+            "analyst", "manager", "leader", "follower", "friend", "family", "parent", "child", "brother", "sister",
+            "husband", "wife", "cousin", "aunt", "uncle", "grandparent", "grandchild", "pet", "animal", "plant",
+            "nature", "city", "town", "village", "country", "continent", "planet", "galaxy", "universe", "technology",
+            "internet", "website", "app", "software", "hardware", "code", "program", "data", "information", "file",
+            "folder", "server", "network", "connection", "signal", "message", "email", "text", "call", "chat",
+            "meeting", "event", "party", "celebration", "holiday", "festival", "birthday", "anniversary", "wedding", "funeral",
+            "religion", "culture", "tradition", "custom", "language", "memory", "thought", "idea", "plan", "goal",
+            "dream", "hope", "wish", "fear", "joy", "sadness", "anger", "love", "hate", "friendship",
+            "relationship", "team", "group", "organization", "company", "business", "money", "finance", "economy", "market",
+            "product", "service", "customer", "client", "seller", "buyer", "owner", "user", "admin", "guest",
+            "leader", "follower", "winner", "loser", "hero", "villain", "expert", "beginner", "professional", "amateur",
+            "parent", "child", "teacher", "student", "doctor", "nurse", "chef", "cook", "artist", "musician",
+            "writer", "poet", "painter", "sculptor", "dancer", "singer", "actor", "actress", "director", "producer",
+            "engineer", "technician", "scientist", "researcher", "analyst", "consultant", "manager", "supervisor", "employee", "employer",
+            "police", "firefighter", "soldier", "doctor", "nurse", "paramedic", "lawyer", "judge", "politician", "leader",
+            "historian", "archaeologist", "geographer", "biologist", "chemist", "physicist", "mathematician", "astronomer", "geologist", "meteorologist",
+            "ecologist", "environmentalists", "sociologist", "anthropologist", "psychologist", "psychiatrist", "neurologist", "cardiologist", "pediatrician", "oncologist",
+            // 动词（200+）
+            "know", "think", "believe", "understand", "learn", "remember", "forget", "want", "need", "like",
+            "love", "hate", "enjoy", "prefer", "hope", "wish", "dream", "plan", "intend", "try",
+            "attempt", "succeed", "fail", "start", "begin", "end", "finish", "continue", "stop", "pause",
+            "go", "come", "stay", "leave", "arrive", "depart", "run", "walk", "jump", "fly",
+            "swim", "drive", "ride", "eat", "drink", "cook", "bake", "read", "write", "draw",
+            "paint", "sing", "dance", "play", "watch", "listen", "speak", "talk", "say", "tell",
+            "ask", "answer", "help", "assist", "support", "encourage", "praise", "criticize", "blame", "thank",
+            "apologize", "forgive", "find", "look", "search", "discover", "create", "make", "build", "destroy",
+            "break", "fix", "repair", "open", "close", "turn", "put", "place", "take", "get",
+            "give", "send", "receive", "buy", "sell", "cost", "pay", "spend", "save", "earn",
+            "win", "lose", "fight", "argue", "agree", "disagree", "think", "feel", "see", "hear",
+            "smell", "taste", "touch", "imagine", "guess", "know", "realize", "recognize", "understand", "learn",
+            "teach", "show", "tell", "explain", "demonstrate", "prove", "disprove", "confirm", "deny", "admit",
+            "refuse", "accept", "reject", "approve", "disapprove", "allow", "permit", "forbid", "order", "command",
+            "request", "beg", "ask", "offer", "provide", "supply", "receive", "get", "take", "give",
+            "lend", "borrow", "owe", "pay", "repay", "spend", "save", "invest", "earn", "win",
+            "lose", "gain", "lose", "find", "lose", "keep", "hold", "carry", "bring", "take",
+            "send", "deliver", "receive", "accept", "refuse", "reject", "approve", "disapprove", "like", "dislike",
+            "love", "hate", "enjoy", "suffer", "experience", "feel", "express", "hide", "show", "reveal",
+            "conceal", "admit", "deny", "confess", "lie", "truth", "fake", "real", "genuine", "false",
+            // 形容词（100+）
+            "good", "bad", "better", "worse", "best", "worst", "same", "different", "similar", "opposite",
+            "many", "few", "much", "little", "some", "any", "all", "none", "each", "every",
+            "both", "either", "neither", "one", "two", "three", "four", "five", "six", "seven",
+            "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen",
+            "eighteen", "nineteen", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety",
+            "hundred", "thousand", "million", "billion", "first", "second", "third", "fourth", "fifth", "sixth",
+            "seventh", "eighth", "ninth", "tenth", "last", "next", "previous", "current", "past", "present",
+            "future", "here", "there", "everywhere", "nowhere", "somewhere", "big", "small", "tall", "short",
+            "long", "wide", "narrow", "deep", "shallow", "heavy", "light", "hot", "cold", "warm",
+            "cool", "soft", "hard", "smooth", "rough", "wet", "dry", "clean", "dirty", "new",
+            "old", "young", "old", "happy", "sad", "angry", "calm", "excited", "tired", "awake",
+            "asleep", "hungry", "full", "thirsty", "healthy", "sick", "strong", "weak", "fast", "slow",
+            "quick", "slow", "early", "late", "soon", "now", "then", "today", "tomorrow", "yesterday",
+            "good", "bad", "nice", "ugly", "beautiful", "handsome", "pretty", "ugly", "smart", "stupid",
+            "intelligent", "foolish", "clever", "dumb", "brave", "cowardly", "kind", "mean", "friendly", "unfriendly",
+            "polite", "rude", "honest", "dishonest", "trustworthy", "untrustworthy", "reliable", "unreliable", "responsible", "irresponsible",
+            "patient", "impatient", "calm", "nervous", "anxious", "relaxed", "happy", "sad", "joyful", "miserable",
+            "angry", "calm", "excited", "bored", "interested", "uninterested", "curious", "uncurious", "confident", "insecure",
+            "proud", "humble", "shy", "bold", "loud", "quiet", "noisy", "silent", "bright", "dark",
+            "light", "heavy", "soft", "hard", "smooth", "rough", "sharp", "blunt", "hot", "cold"
+        ];
+
+        // 样本1：原始字段内容
+        const ORIGINAL_FIELDS = `原始字段:
+timestamp: 时间戳(单位s)
+current_is: 当前页面
+change_to: 在push或者present的时候将要展示的新页面
+fail_reason: 失败原因
+version: 应用版本号
+
+application事件: 
+launch-启动: opentimes-第几次打开
+foreground-进入前台
+background-进入后台
+terminal-杀死
+install-安装: country-国家, lan-语言, id-用户id, install_time-安装时间, model-设备具体型号, resolution-分辨率, scale-缩放因子
+
+window事件:
+window_root_change-window切换root
+window_root_present-window.root去present
+window_root_dismiss-window.root去dismiss
+
+navi事件:
+navi_push: push事件
+navi_pop: pop 事件
+navi-pop_root: pop to root 事件
+
+presen事件
+poresent: present出来新的控制器
+dismiss: 销毁页面
+
+tabbar事件:
+tabbar_change_current: 切换tabbar选中的控制器
+
+ado_req_start: 开始请求开屏
+ado_req_success: 请求开屏成功
+ado_req_fail: 请求开屏失败
+ado_display_start: 开始展示开屏
+ado_display_fail: 展示开屏失败
+ado_display_success: 展示开屏成功
+ado_click: 点击开屏
+
+adi_req_start: 开始请求插页
+adi_req_success: 请求插页成功
+adi_req_fail: 请求插页失败
+adi_display_start: 开始展示插页
+adi_display_fail: 展示插页失败
+adi_display_success: 展示插页成功
+adi_click: 点击插页
+
+adn_req_start: 开始请求原生
+adn_req_success: 请求原生成功
+adn_req_fail: 请求原生失败
+adn_display_success: 原生广告展示成功
+adn_click: 点击原生
+
+ad_other: 广告事件备用名称
+other: 非广告事件备用名=名称`;
+
+        // 样本3：字段及注释（结构化数据）
+        const SAMPLE3_FIELDS = [
+            { field: "timestamp", comment: "时间戳(单位s)" },
+            { field: "current_is", comment: "当前页面" },
+            { field: "change_to", comment: "在push或者present的时候将要展示的新页面" },
+            { field: "fail_reason", comment: "失败原因" },
+            { field: "version", comment: "应用版本号" },
+            { field: "open_times", comment: "第几次打开app" },
+            { field: "launch", comment: "-启动" },
+            { field: "foreground", comment: "-进入前台" },
+            { field: "background", comment: "-进入后台" },
+            { field: "terminal", comment: "-杀死" },
+            { field: "install", comment: "-安装" },
+            { field: "country", comment: "-国家" },
+            { field: "lan", comment: "-语言" },
+            { field: "id", comment: "-用户id" },
+            { field: "install_time", comment: "-安装时间" },
+            { field: "model", comment: "-设备具体型号" },
+            { field: "resolution", comment: "-分辨率" },
+            { field: "scale", comment: "-缩放因子" },
+            { field: "window_root_change", comment: "-window切换root" },
+            { field: "window_root_present", comment: "-window.root去present" },
+            { field: "window_root_dismiss", comment: "-window.root去dismiss" },
+            { field: "navi_push", comment: "push事件" },
+            { field: "navi_pop", comment: "pop 事件" },
+            { field: "navi-pop_root", comment: "pop to root 事件" },
+            { field: "poresent", comment: "present出来新的控制器" },
+            { field: "dismiss", comment: "销毁页面" },
+            { field: "tabbar_change_current", comment: "切换tabbar选中的控制器" },
+            { field: "ado_req_start", comment: "开始请求开屏" },
+            { field: "ado_req_success", comment: "请求开屏成功" },
+            { field: "ado_req_fail", comment: "请求开屏失败" },
+            { field: "ado_display_start", comment: "开始展示开屏" },
+            { field: "ado_display_fail", comment: "展示开屏失败" },
+            { field: "ado_display_success", comment: "展示开屏成功" },
+            { field: "ado_click", comment: "点击开屏" },
+            { field: "adi_req_start", comment: "开始请求插页" },
+            { field: "adi_req_success", comment: "请求插页成功" },
+            { field: "adi_req_fail", comment: "请求插页失败" },
+            { field: "adi_display_start", comment: "开始展示插页" },
+            { field: "adi_display_fail", comment: "展示插页失败" },
+            { field: "adi_display_success", comment: "展示插页成功" },
+            { field: "adi_click", comment: "点击插页" },
+            { field: "adn_req_start", comment: "开始请求原生" },
+            { field: "adn_req_success", comment: "请求原生成功" },
+            { field: "adn_req_fail", comment: "请求原生失败" },
+            { field: "adn_display_success", comment: "原生广告展示成功" },
+            { field: "adn_click", comment: "点击原生" },
+            { field: "ad_other", comment: "广告事件备用名称" },
+            { field: "ad_event", comment: "广告事件在数据库中存储的路径" },
+            { field: "vc_event", comment: "页面事件在数据库中存储的路径" },
+            { field: "userinfo", comment: "用户信息在数据库中存储的路径" },
+            { field: "event_name", comment: "事件名称" },
+            { field: "other", comment: "非广告事件备用名=名称" }
+        ];
+
+        // jsonA需要的特定字段（11个）
+        const JSONA_FIELDS = [
+            "timestamp", "current_is", "change_to", "fail_reason", "version",
+            "country", "lan", "id", "install_time", "model", "resolution", "scale","ad_event","vc_event","userinfo","event_name"
+        ];
+
+        // 存储生成的映射关系
+        let mappingCache = {};
+        // 存储上传的文件信息
+        let uploadedFile = null;
+        let fileContent = null;
+    </script>
+</head>
+<body class="bg-[#f0f7f0] text-[#2e7d32] min-h-screen p-4 md:p-6">
+    <!-- 主要容器改为items-start对齐，确保顶部对齐 -->
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-6 items-start">
+        <!-- 左侧按钮区域 - 移除顶部margin，保持自然排列 -->
+        <div class="w-full md:w-64 flex flex-col gap-4">
+            <button id="btn-original" class="bg-[#4CAF50] hover:bg-[#388E3C] text-white font-medium py-3 px-4 rounded-lg shadow transition duration-300 flex flex-col items-start justify-center h-20">
+                <span class="text-lg font-bold">原始字段</span>
+                <span class="text-sm opacity-90 mt-1">程序最终解析的字段</span>
+            </button>
+            <button id="btn-swift-map" class="bg-[#4CAF50] hover:bg-[#388E3C] text-white font-medium py-3 px-4 rounded-lg shadow transition duration-300 flex flex-col items-start justify-center h-20">
+                <span class="text-lg font-bold">Make Swift Map</span>
+                <span class="text-sm opacity-90 mt-1">根据原始字段生成映射字段</span>
+            </button>
+            <button id="btn-select-file" class="bg-[#4CAF50] hover:bg-[#388E3C] text-white font-medium py-3 px-4 rounded-lg shadow transition duration-300 flex flex-col items-start justify-center h-20">
+                <span class="text-lg font-bold">Json数据库选择</span>
+                <span id="file-path" class="text-sm opacity-90 mt-1">替换json中的映射字段</span>
+            </button>
+            <button id="btn-replace" class="bg-[#4CAF50] hover:bg-[#388E3C] text-white font-medium py-3 px-4 rounded-lg shadow transition duration-300 flex flex-col items-start justify-center h-20">
+                <span class="text-lg font-bold">开始替换</span>
+                <span class="text-sm opacity-90 mt-1">根据映射关系替换字段</span>
+            </button>
+            <button id="btn-clear" class="bg-[#81C784] hover:bg-[#66BB6A] text-white font-medium py-3 px-4 rounded-lg shadow transition duration-300 flex items-center justify-center mt-2">
+                <i class="fa fa-trash mr-2"></i> 清空代码区
+            </button>
+        </div>
+
+        <!-- 右侧代码区域 - 移除顶部gap，确保输入框顶部与左侧按钮对齐 -->
+        <div class="flex-1 flex flex-col w-full">
+            
+            <div class="relative">
+                <textarea id="code-area" class="w-full h-[70vh] bg-white border-2 border-[#C8E6C9] rounded-lg p-4 font-mono text-sm resize-y focus:outline-none focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent" spellcheck="false"></textarea>
+                <div id="code-placeholder" class="absolute top-4 left-4 text-[#9E9E9E] pointer-events-none">
+                    点击左侧按钮生成内容或手动输入...
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 mb-3">
+                <button id="btn-copy" class="bg-[#66BB6A] hover:bg-[#4CAF50] text-white font-medium py-2 px-4 rounded-lg shadow transition duration-300 flex items-center">
+                    <i class="fa fa-copy mr-2"></i> 复制内容
+                </button>
+                <button id="btn-download" class="bg-[#66BB6A] hover:bg-[#4CAF50] text-white font-medium py-2 px-4 rounded-lg shadow transition duration-300 flex items-center hidden">
+                    <i class="fa fa-download mr-2"></i> 下载结果
+                </button>
+            </div>
+        </div>
+
+        <!-- 隐藏的文件选择器 -->
+        <input type="file" id="file-input" accept=".json" class="hidden">
+    </div>
+
+     <div>
+            <ol>
+                <li>1. 真正的解析只会解析json中原始字段, 否则可能会报错</li>
+                <li>2. 生成map是为了在多项目中使用, 防止关联, 如果在单账号下, 是否可以考虑不用map</li>
+                <li>3. 开始替换前请确保json中的映射关系正确, key是原始字段, value是映射字段</li>
+                <li>4. 如果采用映射, 请保存包对应的项目的映射关系, 也就是点击Make Swift Map按钮生成的JsonB 完整映射关系</li>
+            </ol>
+        </div>
+
+    <script>
+        // DOM元素
+        const btnOriginal = document.getElementById('btn-original');
+        const btnSwiftMap = document.getElementById('btn-swift-map');
+        const btnSelectFile = document.getElementById('btn-select-file');
+        const btnReplace = document.getElementById('btn-replace');
+        const btnClear = document.getElementById('btn-clear');
+        const btnCopy = document.getElementById('btn-copy');
+        const btnDownload = document.getElementById('btn-download');
+        const codeArea = document.getElementById('code-area');
+        const codePlaceholder = document.getElementById('code-placeholder');
+        const fileInput = document.getElementById('file-input');
+        const filePath = document.getElementById('file-path');
+
+        // 初始化：默认显示原始字段
+        document.addEventListener('DOMContentLoaded', () => {
+            codeArea.value = ORIGINAL_FIELDS;
+            updatePlaceholder();
+            setActiveButton(btnOriginal);
+        });
+
+        // 按钮点击事件绑定
+        btnOriginal.addEventListener('click', () => {
+            codeArea.value = ORIGINAL_FIELDS;
+            updatePlaceholder();
+            setActiveButton(btnOriginal);
+            btnDownload.classList.add('hidden');
+        });
+
+        btnSwiftMap.addEventListener('click', () => {
+            const result = generateSwiftMap();
+            codeArea.value = result;
+            updatePlaceholder();
+            setActiveButton(btnSwiftMap);
+            btnDownload.classList.remove('hidden');
+        });
+
+        btnSelectFile.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        btnReplace.addEventListener('click', handleReplace);
+
+        btnClear.addEventListener('click', () => {
+            codeArea.value = '';
+            updatePlaceholder();
+            btnDownload.classList.add('hidden');
+        });
+
+        btnCopy.addEventListener('click', () => {
+            if (!codeArea.value) {
+                showToast('没有可复制的内容', 'warning');
+                return;
+            }
+            codeArea.select();
+            document.execCommand('copy');
+            showToast('复制成功', 'success');
+        });
+
+        // 文件选择事件
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            uploadedFile = file;
+            filePath.textContent = `已选择: ${file.name}`;
+
+            // 读取文件内容
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    fileContent = JSON.parse(event.target.result);
+                    showToast(`文件读取成功: ${file.name}`, 'success');
+                } catch (err) {
+                    showToast('所选文件不是合法的JSON', 'error');
+                    fileContent = null;
+                    uploadedFile = null;
+                    filePath.textContent = '替换json中的映射字段';
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // 代码区域输入事件
+        codeArea.addEventListener('input', updatePlaceholder);
+
+        // 更新占位符显示
+        function updatePlaceholder() {
+            codePlaceholder.style.display = codeArea.value ? 'none' : 'block';
+        }
+
+        // 设置活跃按钮样式
+        function setActiveButton(button) {
+            document.querySelectorAll('button').forEach(btn => {
+                btn.classList.remove('ring-2', 'ring-[#2E7D32]', 'ring-offset-2');
+            });
+            button.classList.add('ring-2', 'ring-[#2E7D32]', 'ring-offset-2');
+        }
+
+        // 生成随机映射字段（不重复）
+        function generateUniqueMappingField(usedFields) {
+            let field;
+            do {
+                // 随机选择2-3个单词组合
+                const wordCount = Math.floor(Math.random() * 2) + 2;
+                const selectedWords = [];
+                
+                for (let i = 0; i < wordCount; i++) {
+                    const randomIndex = Math.floor(Math.random() * WORD_LIBRARY.length);
+                    selectedWords.push(WORD_LIBRARY[randomIndex]);
+                }
+                
+                field = selectedWords.join('_').toLowerCase();
+                // 确保字段长度合理（3-20字符）
+                if (field.length > 20) field = field.substring(0, 20);
+            } while (usedFields.has(field));
+            
+            usedFields.add(field);
+            return field;
+        }
+
+        // 生成Swift Map相关内容
+        function generateSwiftMap() {
+            const usedFields = new Set();
+            const allMappings = {};
+            let jsonA = {};
+            let structB = [];
+
+            // 第一步：处理jsonA字段
+            JSONA_FIELDS.forEach(fieldName => {
+                const fieldInfo = SAMPLE3_FIELDS.find(f => f.field === fieldName);
+                if (fieldInfo) {
+                    const mapping = generateUniqueMappingField(usedFields);
+                    allMappings[fieldName] = mapping;
+                    jsonA[fieldName] = { mapping, comment: fieldInfo.comment };
+                }
+            });
+
+            // 第二步：处理结构体B字段（排除jsonA的字段）
+            SAMPLE3_FIELDS.forEach(fieldInfo => {
+                if (!JSONA_FIELDS.includes(fieldInfo.field)) {
+                    const mapping = generateUniqueMappingField(usedFields);
+                    allMappings[fieldInfo.field] = mapping;
+                    structB.push({ 
+                        field: fieldInfo.field, 
+                        mapping, 
+                        comment: fieldInfo.comment 
+                    });
+                }
+            });
+
+            // 缓存映射关系
+            mappingCache = allMappings;
+
+            // 生成jsonA字符串
+            // const jsonAString = JSON.stringify(
+            //     Object.fromEntries(
+            //         Object.entries(jsonA).map(([key, val]) => 
+            //             [`"${key}"`, `"${val.mapping}" // ${val.comment}`]
+            //         )
+            //     ),
+            //     null,
+            //     2
+            // ).replace(/"([^"]+)":/g, '$1:');
+
+
+            // 修改v1
+            // 替换后（无转义）
+            const jsonAEntries = Object.entries(jsonA).map(([key, val]) => {
+                return `  ${key}: "${val.mapping}" // ${val.comment}`; // 直接拼接
+            });
+            const jsonAString = `{\n${jsonAEntries.join(',\n')}\n}`; // 包裹大括号
+
+
+            // 生成结构体B字符串
+            const structBString = `struct EventMappingStruct {
+${structB.map(item => `    case ${item.mapping} // ${item.field}, ${item.comment}`).join('\n')}
+}`;
+
+            // 生成jsonB字符串
+            const jsonBString = JSON.stringify(allMappings, null, 2);
+
+            // 组合最终结果（三个部分用三个换行分隔）
+            return `// JSON A: 核心字段映射（带注释）
+${jsonAString}
+
+
+// 结构体 B: 事件字段映射（Swift）
+${structBString}
+
+
+// JSON B: 完整映射关系（原始字段 -> 映射字段）
+${jsonBString}`;
+        }
+
+        // 处理字段替换
+        function handleReplace() {
+            // 检查是否上传文件
+            if (!uploadedFile || !fileContent) {
+                showToast('请先上传JSON文件', 'warning');
+                return;
+            }
+
+            // 检查右侧内容
+            const codeContent = codeArea.value.trim();
+            if (!codeContent) {
+                showToast('请在右侧输入映射关系', 'warning');
+                return;
+            }
+
+            // 解析映射关系（jsonB格式）
+            let mappingObj;
+            try {
+                mappingObj = JSON.parse(codeContent);
+                // 验证映射关系格式
+                if (typeof mappingObj !== 'object' || mappingObj === null) {
+                    throw new Error('映射关系必须是对象');
+                }
+            } catch (err) {
+                showToast('请输入正确的映射JSON', 'error');
+                return;
+            }
+
+            // 反转映射关系：映射字段 -> 原始字段
+            const reverseMapping = {};
+            Object.entries(mappingObj).forEach(([original, mapped]) => {
+                reverseMapping[mapped] = original;
+            });
+
+            // 递归替换JSON中的键名和值（核心修改）
+            const replacedContent = deepReplaceKeysAndValues(fileContent, reverseMapping);
+
+            // 显示替换结果
+            codeArea.value = JSON.stringify(replacedContent, null, 2);
+            updatePlaceholder();
+            showToast('字段（键名+值）替换成功', 'success');
+            btnDownload.classList.remove('hidden');
+
+            // 绑定下载事件
+            btnDownload.onclick = () => {
+                downloadJSON(replacedContent, `replaced_${uploadedFile.name}`);
+            };
+        }
+
+        // 核心修改：递归替换JSON中的键名和值（值相等时也替换）
+        function deepReplaceKeysAndValues(obj, mapping) {
+            // 如果是基本类型（字符串、数字、布尔、null），检查是否需要替换值
+            if (typeof obj === 'string' && mapping.hasOwnProperty(obj)) {
+                // 字符串值存在映射关系，直接替换
+                return mapping[obj];
+            }
+
+            // 如果是数字/布尔类型，先转为字符串检查映射，存在则替换，否则返回原类型
+            if ((typeof obj === 'number' || typeof obj === 'boolean') && mapping.hasOwnProperty(String(obj))) {
+                return mapping[String(obj)];
+            }
+
+            // 如果是null/undefined，直接返回
+            if (obj === null || typeof obj === 'undefined') {
+                return obj;
+            }
+
+            // 如果是数组，遍历每个元素递归处理
+            if (Array.isArray(obj)) {
+                return obj.map(item => deepReplaceKeysAndValues(item, mapping));
+            }
+
+            // 如果是对象，遍历每个键值对：替换键名 + 递归处理值
+            if (typeof obj === 'object') {
+                const newObj = {};
+                Object.entries(obj).forEach(([key, value]) => {
+                    // 替换键名（如果存在映射）
+                    const newKey = mapping[key] || key;
+                    // 递归处理值（可能需要替换值）
+                    newObj[newKey] = deepReplaceKeysAndValues(value, mapping);
+                });
+                return newObj;
+            }
+
+            // 其他类型（如Symbol等）直接返回
+            return obj;
+        }
+
+        // 下载JSON文件
+        function downloadJSON(data, filename) {
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast(`文件已下载: ${filename}`, 'success');
+        }
+
+        // 显示提示框
+        function showToast(message, type = 'info') {
+            // 创建提示框元素
+            const toast = document.createElement('div');
+            const iconMap = {
+                success: 'fa-check-circle',
+                warning: 'fa-exclamation-triangle',
+                error: 'fa-times-circle',
+                info: 'fa-info-circle'
+            };
+            const colorMap = {
+                success: 'bg-[#4CAF50]',
+                warning: 'bg-[#FFC107]',
+                error: 'bg-[#F44336]',
+                info: 'bg-[#2196F3]'
+            };
+
+            toast.className = `${colorMap[type]} text-white px-4 py-2 rounded-lg shadow-lg flex items-center fixed bottom-4 right-4 z-50 transition-all duration-300 transform translate-y-20 opacity-0`;
+            toast.innerHTML = `<i class="fa ${iconMap[type]} mr-2"></i> ${message}`;
+
+            document.body.appendChild(toast);
+
+            // 显示提示框
+            setTimeout(() => {
+                toast.classList.remove('translate-y-20', 'opacity-0');
+            }, 10);
+
+            // 3秒后隐藏
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
+
+
+
+<!-- ia02 替换字段
+{
+"event_name":"a_name",
+"ado_req_start":"ad_or_s",
+"ado_req_success":"ad_orsuccess",
+"ado_req_fail":"ad_open_req_fail", 
+"ado_display_start":"ad_odis", 
+"ado_display_fail":"ad_odisf", 
+"ado_display_success":"ado_dissuccess", 
+"ado_click":"ad_oc", 
+"userinfo":"info", 
+"vc_event":"operations", 
+"fail_reason":"reason"
+} 
+-->
+

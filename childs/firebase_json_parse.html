@@ -1,0 +1,2231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户行为和广告数据分析平台</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.min.js"></script>
+    <style>
+        :root {
+            --primary: #4CAF50;
+            --primary-light: #E8F5E9;
+            --primary-dark: #388E3C;
+            --text: #333333;
+            --text-light: #757575;
+            --border: #C8E6C9;
+            --bg: #F9FFF9;
+            --card-bg: #FFFFFF;
+            --hover: #E0F2F1;
+            --success: #81C784;
+            --warning: #FFB74D;
+            --danger: #E57373;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding-bottom: 50px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Part1 样式 */
+        .part1 {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 220px;
+            flex-shrink: 0;
+        }
+
+        .func-btn {
+            padding: 14px 16px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            font-size: 15px;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(76, 175, 80, 0.2);
+        }
+
+        .func-btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+        }
+
+        .func-btn.active {
+            background-color: var(--primary-dark);
+            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+            border-left: 4px solid #FFFFFF;
+        }
+
+        .func-btn .desc {
+            font-size: 12px;
+            opacity: 0.85;
+            margin-top: 4px;
+            font-weight: normal;
+        }
+
+        .code-container {
+            flex: 1;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: var(--card-bg);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            min-height: 200px;
+        }
+
+        .code-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            padding: 10px 15px;
+            background-color: var(--primary-light);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .code-tool {
+            margin-left: 10px;
+            padding: 6px 14px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background-color 0.3s ease;
+        }
+
+        .code-tool:hover {
+            background-color: var(--primary-dark);
+        }
+
+        #codeContent {
+            width: 100%;
+            height: calc(200px - 45px);
+            padding: 18px;
+            border: none;
+            resize: none;
+            background-color: transparent;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text);
+            tab-size: 4;
+        }
+
+        #codeContent:focus {
+            outline: none;
+        }
+
+        /* Part2 筛选栏样式 */
+        .part2 {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 25px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .filter-label {
+            font-weight: 500;
+            color: var(--primary-dark);
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .filter-select {
+            padding: 8px 14px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background-color: var(--bg);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            min-width: 160px;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+        }
+
+        .time-range {
+            font-size: 13px;
+            color: var(--text-light);
+            margin-left: 8px;
+            white-space: nowrap;
+        }
+
+        /* Part3 数据总览样式 */
+        .part3 {
+            margin-bottom: 35px;
+            display: none;
+        }
+
+        .overview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 22px;
+            background-color: var(--primary);
+            border-radius: 2px;
+        }
+
+        .install-count {
+            font-size: 14px;
+            color: var(--text-light);
+            background-color: var(--primary-light);
+            padding: 6px 12px;
+            border-radius: 4px;
+        }
+
+        .install-count span {
+            color: var(--primary-dark);
+            font-weight: 600;
+            margin-left: 5px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .data-table th, .data-table td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+
+        .data-table th {
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr:hover {
+            background-color: var(--hover);
+        }
+
+        .avg-row {
+            background-color: #F1F8E9 !important;
+            font-weight: 500;
+            color: var(--primary-dark);
+        }
+
+        .rate-value {
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        /* Part4 饼图样式 */
+        .part4 {
+            margin-bottom: 35px;
+            display: none;
+        }
+
+        .pie-charts-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 18px;
+        }
+
+        .pie-chart-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .pie-chart-wrapper {
+            flex: 1;
+            min-width: 280px;
+            height: 400px;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-title {
+            text-align: center;
+            font-size: 15px;
+            color: var(--primary-dark);
+            margin-bottom: 10px;
+            font-weight: 500;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .chart-container {
+            flex: 1;
+            width: 100%;
+            height: calc(100% - 30px);
+            /*height: 100%;*/
+            
+            display: /*flex;
+            align-items: center;
+            justify-content: center;*/
+        }
+
+        /* Part5 折线图样式 */
+        .part5 {
+            margin-bottom: 35px;
+            display: none;
+        }
+
+        .line-chart-wrapper {
+            height: 400px;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 18px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-top: 18px;
+        }
+
+        /* Part6 用户列表样式 */
+        .part6 {
+            margin-bottom: 35px;
+            display: none;
+        }
+
+        .user-event-container {
+            display: flex;
+            gap: 20px;
+            margin-top: 18px;
+            flex-wrap: wrap;
+        }
+
+        .user-list-wrapper {
+            flex: 1;
+            min-width: 320px;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 18px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            max-height: 650px;
+            overflow-y: auto;
+        }
+
+        .user-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .user-list-title {
+            font-size: 15px;
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
+
+        .sort-controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .sort-btn {
+            padding: 5px 10px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background-color: var(--bg);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .sort-btn:hover, .sort-btn.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .user-item {
+            padding: 14px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: var(--card-bg);
+        }
+
+        .user-item:hover, .user-item.active {
+            background-color: var(--hover);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .user-info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .user-info-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .user-info-label {
+            color: var(--text-light);
+            width: 90px;
+            white-space: nowrap;
+        }
+
+        .user-info-value {
+            flex: 1;
+            color: var(--text);
+            word-break: break-all;
+        }
+
+        .rate-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .rate-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 60px;
+        }
+
+        .rate-type {
+            font-size: 11px;
+            color: var(--text-light);
+        }
+
+        .rate-value-small {
+            font-size: 12px;
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .event-detail-wrapper {
+            flex: 1;
+            min-width: 320px;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 18px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            max-height: 650px;
+            overflow-y: auto;
+        }
+
+        .event-detail-header {
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 15px;
+        }
+
+        .event-detail-title {
+            font-size: 15px;
+            color: var(--primary-dark);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .event-detail-subtitle {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        .event-detail-empty {
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-light);
+            font-size: 14px;
+            flex-direction: column;
+            gap: 10px;
+            padding: 20px;
+        }
+
+        .event-detail-empty i {
+            font-size: 40px;
+            color: var(--border);
+        }
+
+        .event-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .event-item {
+            padding: 10px 12px;
+            border-radius: 4px;
+            background-color: var(--primary-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            transition: background-color 0.3s ease;
+        }
+
+        .event-item:hover {
+            background-color: #DCE775;
+        }
+
+        .event-name {
+            font-size: 13px;
+            color: var(--primary-dark);
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .event-time {
+            font-size: 11px;
+            color: var(--text-light);
+            white-space: nowrap;
+            margin-left: 10px;
+        }
+
+        .event-extra {
+            font-size: 11px;
+            color: var(--text-light);
+            margin-top: 4px;
+            padding-left: 2px;
+        }
+
+        /* Loading样式 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--primary-light);
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-text {
+            color: var(--primary-dark);
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 弹窗样式 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            display: none;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 25px;
+            width: 350px;
+            max-width: 90%;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            align-content: center;
+        }
+
+        .modal-icon {
+            font-size: 40px;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+
+        .modal-message {
+            margin-bottom: 20px;
+            color: var(--text);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .modal-btn {
+            padding: 8px 25px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .modal-btn:hover {
+            background-color: var(--primary-dark);
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .btn-group {
+                width: 100%;
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .func-btn {
+                flex: 1;
+                min-width: 140px;
+                text-align: center;
+                padding: 12px 8px;
+            }
+
+            .func-btn .desc {
+                display: none;
+            }
+
+            .part2 {
+                gap: 20px;
+                padding: 12px 15px;
+            }
+
+            .filter-group {
+                gap: 8px;
+                width: 100%;
+            }
+
+            .time-range {
+                margin-left: 0;
+                margin-top: 5px;
+            }
+
+            .data-table th, .data-table td {
+                padding: 10px 8px;
+                font-size: 12px;
+            }
+
+            .pie-chart-wrapper {
+                min-width: 100%;
+                height: 300px;
+            }
+
+            .user-list-wrapper, .event-detail-wrapper {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Part1: 功能按钮与代码块 -->
+        <div class="part1">
+            <div class="btn-group">
+                <button class="func-btn" id="selectFileBtn">
+                    选择json文件
+                    <div class="desc" id="fileDesc">未选择文件</div>
+                </button>
+                <button class="func-btn" id="parseBtn">
+                    解析
+                    <div class="desc">计算结果</div>
+                </button>
+            </div>
+            <div class="code-container">
+                <div class="code-toolbar">
+                    <button class="code-tool" id="copyCodeBtn">复制</button>
+                    <button class="code-tool" id="clearCodeBtn">清空</button>
+                </div>
+                <textarea id="codeContent" readonly placeholder="选择JSON文件后将显示文件内容..."></textarea>
+            </div>
+        </div>
+
+        <!-- Part2: 条件筛选 -->
+        <div class="part2">
+            <div class="filter-group">
+                <label class="filter-label">时间范围:</label>
+                <select class="filter-select" id="timeRangeSelect">
+                    <option value="today">今天</option>
+                    <option value="yesterday">昨天</option>
+                    <option value="3days">近3天</option>
+                    <option value="7days" selected>近7天</option>
+                    <option value="30days">近30天</option>
+                    <option value="90days">近90天</option>
+                    <option value="360days">近360天</option>
+                </select>
+                <span class="time-range" id="timeRangeText"></span>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">版本选择:</label>
+                <select class="filter-select" id="versionSelect">
+                    <option value="all">all</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Part3: 数据总览 -->
+        <div class="part3" id="part3">
+            <div class="overview-header">
+                <h3 class="section-title">数据总览</h3>
+                <div class="install-count">安装总数: <span id="totalInstalls">0</span></div>
+            </div>
+            <table class="data-table" id="overviewTable">
+                <thead>
+                    <tr>
+                        <th>类型</th>
+                        <th>匹配率</th>
+                        <th>展示率</th>
+                        <th>点击率</th>
+                        <th>人均展示个数</th>
+                        <th>总数(req/s/f - dis_s/dis_f)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr id="adoRow">
+                        <td>开屏广告</td>
+                        <td><span class="rate-value">0.00</span>%</td>
+                        <td><span class="rate-value">0.00</span>%</td>
+                        <td><span class="rate-value">0.00</span>%</td>
+                        <td>0.00</td>
+                        <td>0/0/0 - 0/0</td>
+                    </tr>
+                    <tr id="adiRow">
+                        <td>插页广告</td>
+                        <td><span class="rate-value">0.00</span>%</td>
+                        <td><span class="rate-value">0.00</span>%</td>
+                        <td><span class="rate-value">0.00</span>%</td>
+                        <td>0.00</td>
+                        <td>0/0/0 - 0/0</td>
+                    </tr>
+                    <tr id="adnRow">
+                        <td>原生广告</td>
+                        <td><span class="rate-value">0.00</span>%</td>
+                        <td><span class="rate-value">0.00</span>%</td>
+                        <td><span class="rate-value">0.00</span>%</td>
+                        <td>0.00</td>
+                        <td>0/0/0 - 0/0</td>
+                    </tr>
+                    <tr class="avg-row" id="avgRow">
+                        <td>平均数据</td>
+                        <td><span class="rate-value">0.00</span>%</td>
+                        <td><span class="rate-value">0.00</span>%</td>
+                        <td><span class="rate-value">0.00</span>%</td>
+                        <td>0.00</td>
+                        <td>-</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Part4: 饼图部分 -->
+        <div class="part4" id="part4">
+            <h3 class="section-title">详细分布分析</h3>
+            <div class="pie-charts-container">
+                <!-- 第一行：请求失败原因 -->
+                <div class="pie-chart-row">
+                    <div class="pie-chart-wrapper">
+                        <div class="chart-title">开屏广告请求失败原因</div>
+                        <div class="chart-container" id="adoReqFailChart"></div>
+                    </div>
+                    <div class="pie-chart-wrapper">
+                        <div class="chart-title">插页广告请求失败原因</div>
+                        <div class="chart-container" id="adiReqFailChart"></div>
+                    </div>
+                    <div class="pie-chart-wrapper">
+                        <div class="chart-title">原生广告请求失败原因</div>
+                        <div class="chart-container" id="adnReqFailChart"></div>
+                    </div>
+                </div>
+                <!-- 第二行：展示失败原因 -->
+                <div class="pie-chart-row">
+                    <div class="pie-chart-wrapper">
+                        <div class="chart-title">开屏广告展示失败原因</div>
+                        <div class="chart-container" id="adoDisplayFailChart"></div>
+                    </div>
+                    <div class="pie-chart-wrapper">
+                        <div class="chart-title">插页广告展示失败原因</div>
+                        <div class="chart-container" id="adiDisplayFailChart"></div>
+                    </div>
+                    <div class="pie-chart-wrapper">
+                        <div class="chart-title">原生广告展示失败原因</div>
+                        <div class="chart-container" id="adnDisplayFailChart"></div>
+                    </div>
+                </div>
+                <!-- 第三行：地域和机型分布 -->
+                <div class="pie-chart-row">
+                    <div class="pie-chart-wrapper">
+                        <div class="chart-title">地域分布</div>
+                        <div class="chart-container" id="countryDistributionChart"></div>
+                    </div>
+                    <div class="pie-chart-wrapper">
+                        <div class="chart-title">机型分布</div>
+                        <div class="chart-container" id="modelDistributionChart"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Part5: 折线图部分 -->
+        <div class="part5" id="part5">
+            <h3 class="section-title">安装数量时间趋势</h3>
+            <div class="line-chart-wrapper">
+                <div id="installTrendChart"></div>
+            </div>
+        </div>
+
+        <!-- Part6: 用户列表与事件详情 -->
+        <div class="part6" id="part6">
+            <h3 class="section-title">用户行为详情</h3>
+            <div class="user-event-container">
+                <div class="user-list-wrapper">
+                    <div class="user-list-header">
+                        <div class="user-list-title">用户列表 (<span id="userCount">0</span>)</div>
+                        <div class="sort-controls">
+                            <button class="sort-btn active" data-sort="installTime-desc">安装时间↓</button>
+                            <button class="sort-btn" data-sort="installTime-asc">安装时间↑</button>
+                            <button class="sort-btn" data-sort="adoShowRate-desc">开屏展示率↓</button>
+                            <button class="sort-btn" data-sort="adoShowRate-asc">开屏展示率↑</button>
+                            <button class="sort-btn" data-sort="adiShowRate-desc">插页展示率↓</button>
+                            <button class="sort-btn" data-sort="adiShowRate-asc">插页展示率↑</button>
+                            <button class="sort-btn" data-sort="adnShowRate-desc">原生展示率↓</button>
+                            <button class="sort-btn" data-sort="adnShowRate-asc">原生展示率↑</button>
+                        </div>
+                    </div>
+                    <div id="userListContainer"></div>
+                </div>
+                <div class="event-detail-wrapper">
+                    <div class="event-detail-empty" id="eventEmptyTip">
+                        <i>📋</i>
+                        <div>请选择一个用户查看事件详情</div>
+                    </div>
+                    <div id="eventDetailContainer" style="display: none;">
+                        <div class="event-detail-header">
+                            <div class="event-detail-title">用户事件详情</div>
+                            <div class="event-detail-subtitle" id="eventUserSubtitle"></div>
+                        </div>
+                        <div class="event-list" id="eventList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading弹窗 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">正在解析数据，请稍候...</div>
+    </div>
+
+    <!-- 提示弹窗 -->
+    <div class="modal" id="alertModal">
+        <div class="modal-content">
+            <div class="modal-icon">ℹ️</div>
+            <div class="modal-message" id="alertMessage"></div>
+            <button class="modal-btn" id="alertConfirmBtn">确认</button>
+        </div>
+    </div>
+
+    <script>
+              // 全局变量
+let originalJson = null; // 原始JSON数据
+let currentTimeRange = '7days'; // 当前时间范围
+let currentVersion = 'all'; // 当前版本
+let userDataList = []; // 用户数据列表
+let adStats = { // 广告统计数据
+    ado: { reqStart: 0, reqSuccess: 0, reqFail: 0, displaySuccess: 0, displayFail: 0, click: 0, reqFailReasons: {}, displayFailReasons: {} },
+    adi: { reqStart: 0, reqSuccess: 0, reqFail: 0, displaySuccess: 0, displayFail: 0, click: 0, reqFailReasons: {}, displayFailReasons: {} },
+    adn: { reqStart: 0, reqSuccess: 0, reqFail: 0, displaySuccess: 0, displayFail: 0, click: 0, reqFailReasons: {}, displayFailReasons: {} }
+};
+let countryStats = {}; // 国家统计
+let modelStats = {}; // 机型统计
+let installTrendData = {}; // 安装趋势数据
+let versions = new Set(); // 版本列表
+let charts = {}; // 存储所有图表实例
+
+// 国家代码-名称映射
+const countryCodeMap = {
+    'CN': '中国', 'US': '美国', 'HK': '中国香港', 'TW': '中国台湾', 'UK': '英国',
+    'JP': '日本', 'KR': '韩国', 'SG': '新加坡', 'MY': '马来西亚', 'TH': '泰国',
+    'VN': '越南', 'ID': '印度尼西亚', 'PH': '菲律宾', 'IN': '印度', 'PK': '巴基斯坦',
+    'BD': '孟加拉国', 'NG': '尼日利亚', 'EG': '埃及', 'ZA': '南非', 'DE': '德国',
+    'FR': '法国', 'IT': '意大利', 'ES': '西班牙', 'RU': '俄罗斯', 'CA': '加拿大',
+    'AU': '澳大利亚', 'NZ': '新西兰', 'BR': '巴西', 'AR': '阿根廷', 'MX': '墨西哥',
+    'CH': '瑞士', 'AT': '奥地利', 'BE': '比利时', 'NL': '荷兰', 'SE': '瑞典',
+    'NO': '挪威', 'DK': '丹麦', 'FI': '芬兰', 'IE': '爱尔兰', 'PT': '葡萄牙',
+    'GR': '希腊', 'TR': '土耳其', 'SA': '沙特阿拉伯', 'AE': '阿联酋', 'IL': '以色列',
+    "IQ":"伊拉克", "DZ":"阿尔及利亚"
+};
+
+// 语言代码-名称映射
+const langCodeMap = {
+    'zh': '中文', 'en': '英语', 'ja': '日语', 'ko': '韩语', 'fr': '法语',
+    'de': '德语', 'es': '西班牙语', 'ru': '俄语', 'pt': '葡萄牙语', 'ar': '阿拉伯语',
+    'hi': '印地语', 'bn': '孟加拉语', 'ur': '乌尔都语', 'id': '印尼语', 'ms': '马来语',
+    'th': '泰语', 'vi': '越南语', 'tr': '土耳其语', 'it': '意大利语', 'nl': '荷兰语',
+    'sv': '瑞典语', 'no': '挪威语', 'da': '丹麦语', 'fi': '芬兰语', 'pl': '波兰语',
+    'cs': '捷克语', 'hu': '匈牙利语', 'ro': '罗马尼亚语', 'el': '希腊语', 'he': '希伯来语'
+};
+
+// 广告事件名称映射（统一标准事件名）
+const adEventMap = {
+    // 开屏广告
+    'ad_open_req_start': 'ado_req_start',
+    'ad_open_req_success': 'ado_req_success',
+    'ad_open_req_fail': 'ado_req_fail',
+    'ad_open_display_start': 'ado_display_start',
+    'ad_open_display_success': 'ado_display_success',
+    'ad_open_display_fail': 'ado_display_fail',
+    'ad_open_click': 'ado_click',
+    // 插页广告
+    'ad_inter_req_start': 'adi_req_start',
+    'ad_inter_req_success': 'adi_req_success',
+    'ad_inter_req_fail': 'adi_req_fail',
+    'ad_inter_display_start': 'adi_display_start',
+    'ad_inter_display_success': 'adi_display_success',
+    'ad_inter_display_fail': 'adi_display_fail',
+    'ad_inter_click': 'adi_click',
+    // 原生广告
+    'ad_native_req_start': 'adn_req_start',
+    'ad_native_req_success': 'adn_req_success',
+    'ad_native_req_fail': 'adn_req_fail',
+    'ad_native_display_start': 'adn_display_start',
+    'ad_native_display_success': 'adn_display_success',
+    'ad_native_display_fail': 'adn_display_fail',
+    'ad_native_click': 'adn_click'
+};
+
+// 初始化页面 - 简化DOM加载逻辑，确保文件选择功能正常
+$(document).ready(function() {
+    // 直接初始化核心功能，避免嵌套事件冲突
+    updateTimeRangeText();
+    bindButtonEvents();
+    initCharts();
+});
+
+// 绑定按钮事件 - 重点修复文件选择功能
+function bindButtonEvents() {
+    // 选择文件按钮 - 修复事件绑定，确保文件选择框正常弹出
+    $('#selectFileBtn').off('click').on('click', function() {
+        $(this).addClass('active').siblings().removeClass('active');
+        
+        // 直接创建并触发文件输入框，避免DOM插入问题
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.json';
+        fileInput.style.display = 'none';
+        
+        // 文件选择回调
+        fileInput.onchange = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            $('#fileDesc').text(file.name);
+            const reader = new FileReader();
+            
+            reader.onload = function(event) {
+                try {
+                    originalJson = JSON.parse(event.target.result);
+                    const formattedJson = JSON.stringify(originalJson, null, 2);
+                    $('#codeContent').val(formattedJson).prop('readonly', true);
+                    extractVersions(originalJson);
+                    showAlert('文件选择成功！');
+                } catch (err) {
+                    showAlert('JSON文件解析失败：' + err.message);
+                    originalJson = null;
+                    $('#codeContent').val('JSON文件解析失败：' + err.message);
+                }
+            };
+            
+            reader.onerror = function() {
+                showAlert('文件读取失败，请重试');
+            };
+            
+            reader.readAsText(file);
+        };
+        
+        // 触发文件选择对话框
+        fileInput.click();
+    });
+
+    // 解析按钮
+    $('#parseBtn').off('click').on('click', function() {
+        $(this).addClass('active').siblings().removeClass('active');
+        if (!originalJson) {
+            showAlert('请先选择json文件');
+            return;
+        }
+        
+        $('#loadingOverlay').show();
+        setTimeout(() => {
+            try {
+                resetStats();
+                parseJsonData(originalJson);
+                renderAllSections();
+                $('#loadingOverlay').hide();
+            } catch (err) {
+                $('#loadingOverlay').hide();
+                showAlert('解析失败：' + err.message);
+                console.error('解析错误详情：', err);
+            }
+        }, 300);
+    });
+
+    // 复制代码按钮
+    $('#copyCodeBtn').off('click').on('click', function() {
+        const codeContent = $('#codeContent').val();
+        if (!codeContent || codeContent === '选择JSON文件后将显示文件内容...') {
+            showAlert('没有可复制的内容！');
+            return;
+        }
+        navigator.clipboard.writeText(codeContent).then(() => {
+            showAlert('复制成功！');
+        }).catch(err => {
+            showAlert('复制失败：' + err.message);
+        });
+    });
+
+    // 清空代码按钮
+    $('#clearCodeBtn').off('click').on('click', function() {
+        $('#codeContent').val('选择JSON文件后将显示文件内容...').prop('readonly', true);
+    });
+
+    // 时间范围选择变化
+    $('#timeRangeSelect').off('change').on('change', function() {
+        currentTimeRange = $(this).val();
+        updateTimeRangeText();
+        if (originalJson) {
+            $('#loadingOverlay').show();
+            setTimeout(() => {
+                try {
+                    resetStats();
+                    parseJsonData(originalJson);
+                    renderAllSections();
+                    $('#loadingOverlay').hide();
+                } catch (err) {
+                    $('#loadingOverlay').hide();
+                    showAlert('解析失败：' + err.message);
+                    console.error('解析错误详情：', err);
+                }
+            }, 300);
+        }
+    });
+
+    // 版本选择变化
+    $('#versionSelect').off('change').on('change', function() {
+        currentVersion = $(this).val();
+        if (originalJson) {
+            $('#loadingOverlay').show();
+            setTimeout(() => {
+                try {
+                    resetStats();
+                    parseJsonData(originalJson);
+                    renderAllSections();
+                    $('#loadingOverlay').hide();
+                } catch (err) {
+                    $('#loadingOverlay').hide();
+                    showAlert('解析失败：' + err.message);
+                    console.error('解析错误详情：', err);
+                }
+            }, 300);
+        }
+    });
+
+    // 排序按钮事件
+    $('.sort-btn').off('click').on('click', function() {
+        const sortType = $(this).data('sort');
+        $(this).addClass('active').siblings().removeClass('active');
+        sortUserList(sortType);
+        renderUserList();
+    });
+
+    // 弹窗确认按钮
+    $('#alertConfirmBtn').off('click').on('click', function() {
+        $('#alertModal').hide();
+    });
+}
+
+// 提取所有版本
+function extractVersions(jsonData) {
+    versions.clear();
+    Object.values(jsonData).forEach(userData => {
+        if (userData.userinfo && userData.userinfo.version) {
+            versions.add(userData.userinfo.version);
+        }
+    });
+    
+    const versionSelect = $('#versionSelect');
+    const currentVal = versionSelect.val();
+    versionSelect.find('option:not([value="all"])').remove();
+    
+    Array.from(versions).sort((a, b) => {
+        const aParts = a.split('.').map(Number);
+        const bParts = b.split('.').map(Number);
+        const maxLen = Math.max(aParts.length, bParts.length);
+        for (let i = 0; i < maxLen; i++) {
+            const aVal = aParts[i] || 0;
+            const bVal = bParts[i] || 0;
+            if (aVal !== bVal) {
+                return bVal - aVal;
+            }
+        }
+        return 0;
+    }).forEach(version => {
+        versionSelect.append(`<option value="${version}">${version}</option>`);
+    });
+    
+    if (currentVal !== 'all' && versions.has(currentVal)) {
+        versionSelect.val(currentVal);
+    }
+}
+
+// 重置统计数据
+function resetStats() {
+    adStats = {
+        ado: { reqStart: 0, reqSuccess: 0, reqFail: 0, displaySuccess: 0, displayFail: 0, click: 0, reqFailReasons: {}, displayFailReasons: {} },
+        adi: { reqStart: 0, reqSuccess: 0, reqFail: 0, displaySuccess: 0, displayFail: 0, click: 0, reqFailReasons: {}, displayFailReasons: {} },
+        adn: { reqStart: 0, reqSuccess: 0, reqFail: 0, displaySuccess: 0, displayFail: 0, click: 0, reqFailReasons: {}, displayFailReasons: {} }
+    };
+    countryStats = {};
+    modelStats = {};
+    installTrendData = {};
+    userDataList = [];
+}
+
+// 获取时间范围（强制本地时间）
+function getTimeRange(rangeType) {
+    const now = new Date(); // 本地时间
+    let endTime = Math.floor(now.getTime() / 1000);
+    let startTime = 0;
+
+    switch (rangeType) {
+        case 'today':
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            startTime = Math.floor(today.getTime() / 1000);
+            break;
+        case 'yesterday':
+            const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+            startTime = Math.floor(yesterday.getTime() / 1000);
+            endTime = Math.floor(new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() / 1000);
+            break;
+        case '3days':
+            const threeDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2);
+            startTime = Math.floor(threeDaysAgo.getTime() / 1000);
+            break;
+        case '7days':
+            const sevenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+            startTime = Math.floor(sevenDaysAgo.getTime() / 1000);
+            break;
+        case '30days':
+            const thirtyDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29);
+            startTime = Math.floor(thirtyDaysAgo.getTime() / 1000);
+            break;
+        case '90days':
+            const ninetyDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 89);
+            startTime = Math.floor(ninetyDaysAgo.getTime() / 1000);
+            break;
+        case '360days':
+            const threeHundredSixtyDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 359);
+            startTime = Math.floor(threeHundredSixtyDaysAgo.getTime() / 1000);
+            break;
+    }
+
+    return { startTime, endTime };
+}
+
+// 更新时间范围显示文本（强制本地时间）
+function updateTimeRangeText() {
+    const { startTime, endTime } = getTimeRange(currentTimeRange);
+    const startDate = formatDate(startTime * 1000);
+    const endDate = formatDate(endTime * 1000);
+    $('#timeRangeText').text(`(${startDate} ~ ${endDate})`);
+}
+
+// 格式化日期（精确到天，强制本地时间）
+function formatDate(timestamp) {
+    const date = new Date(timestamp);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // 本地时间月份（0-11）
+    const day = String(date.getDate()).padStart(2, '0'); // 本地时间日期
+    return `${year}-${month}-${day}`;
+}
+
+// 格式化时间戳（精确到毫秒，强制本地时间）
+function formatTimestamp(timestamp) {
+    // 处理秒级/毫秒级时间戳
+    // if (timestamp.toString().length < 13) {
+        timestamp = timestamp * 1000;  // 秒转换为毫秒
+    // }
+    const date = new Date(timestamp);
+    // 全部使用本地时间方法
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hour = String(date.getHours()).padStart(2, '0'); // 本地时间（0-23）
+    const minute = String(date.getMinutes()).padStart(2, '0'); // 本地时间
+    const second = String(date.getSeconds()).padStart(2, '0'); // 本地时间
+    const millisecond = String(date.getMilliseconds()).padStart(3, '0'); // 本地时间
+    return `${year}-${month}-${day} ${hour}:${minute}:${second}.${millisecond}`;
+}
+
+// 解析JSON数据
+function parseJsonData(jsonData) {
+    const { startTime, endTime } = getTimeRange(currentTimeRange);
+    
+    Object.values(jsonData).forEach(userData => {
+        if (!userData.userinfo || !userData.userinfo.id) return;
+        
+        const userInfo = userData.userinfo;
+        const userId = userInfo.id;
+        const installTime = userInfo.install_time || userInfo.timestamp;
+        const version = userInfo.version || 'unknown';
+        const country = (userInfo.country || 'unknown').toUpperCase();
+        const lang = (userInfo.lan || 'unknown').toLowerCase();
+        const model = userInfo.model || 'unknown';
+        console.log('安装时间',formatTimestamp(installTime))
+        console.log('开始时间',formatTimestamp(startTime))
+        console.log('结束时间',formatTimestamp(endTime))
+        if (currentVersion !== 'all' && version !== currentVersion) return;
+        if (installTime < startTime || installTime > endTime) return;
+
+        const userStats = {
+            userId,
+            installTime,
+            version,
+            country,
+            lang,
+            model,
+            ado: { reqStart: 0, reqSuccess: 0, reqFail: 0, displaySuccess: 0, displayFail: 0, click: 0 },
+            adi: { reqStart: 0, reqSuccess: 0, reqFail: 0, displaySuccess: 0, displayFail: 0, click: 0 },
+            adn: { reqStart: 0, reqSuccess: 0, reqFail: 0, displaySuccess: 0, displayFail: 0, click: 0 },
+            events: []
+        };
+
+        // 处理广告事件
+        if (userData.ad_event && typeof userData.ad_event === 'object') {
+            Object.values(userData.ad_event).forEach(event => {
+                if (!event.event_name || !event.timestamp) return;
+                
+                const eventName = adEventMap[event.event_name] || event.event_name;
+                const eventTime = event.timestamp;
+                
+                if (eventTime < startTime || eventTime > endTime) return;
+
+                userStats.events.push({
+                    type: 'ad_event',
+                    eventName: event.event_name,
+                    timestamp: eventTime,
+                    failReason: event.fail_reason || '',
+                    extra: JSON.stringify(event, (k, v) => k === 'event_name' || k === 'timestamp' || k === 'fail_reason' ? undefined : v)
+                });
+
+                switch (true) {
+                    case eventName.startsWith('ado_'):
+                        updateAdStats('ado', eventName, event.fail_reason, userStats.ado);
+                        break;
+                    case eventName.startsWith('adi_'):
+                        updateAdStats('adi', eventName, event.fail_reason, userStats.adi);
+                        break;
+                    case eventName.startsWith('adn_'):
+                        updateAdStats('adn', eventName, event.fail_reason, userStats.adn);
+                        break;
+                }
+            });
+        }
+
+        // 处理页面事件
+        if (userData.vc_event && typeof userData.vc_event === 'object') {
+            Object.values(userData.vc_event).forEach(event => {
+                if (!event.event_name || !event.timestamp) return;
+                
+                const eventTime = event.timestamp;
+                if (eventTime < startTime || eventTime > endTime) return;
+
+                userStats.events.push({
+                    type: 'vc_event',
+                    eventName: event.event_name,
+                    timestamp: eventTime,
+                    failReason: '',
+                    extra: JSON.stringify(event, (k, v) => k === 'event_name' || k === 'timestamp' ? undefined : v)
+                });
+            });
+        }
+
+        // 排序事件（本地时间顺序）
+        userStats.events.sort((a, b) => a.timestamp - b.timestamp);
+        calculateUserRates(userStats);
+        updateCountryStats(country);
+        updateModelStats(model);
+        updateInstallTrend(installTime);
+        userDataList.push(userStats);
+    });
+
+    calculateAverageRates();
+}
+
+// 更新广告统计
+function updateAdStats(adType, eventName, failReason, userAdStats) {
+    switch (eventName) {
+        case `${adType}_req_start`:
+            adStats[adType].reqStart++;
+            userAdStats.reqStart++;
+            break;
+        case `${adType}_req_success`:
+            adStats[adType].reqSuccess++;
+            userAdStats.reqSuccess++;
+            break;
+        case `${adType}_req_fail`:
+            adStats[adType].reqFail++;
+            userAdStats.reqFail++;
+            const reason = failReason || '未知原因';
+            adStats[adType].reqFailReasons[reason] = (adStats[adType].reqFailReasons[reason] || 0) + 1;
+            break;
+        case `${adType}_display_success`:
+            adStats[adType].displaySuccess++;
+            userAdStats.displaySuccess++;
+            break;
+        case `${adType}_display_fail`:
+            adStats[adType].displayFail++;
+            userAdStats.displayFail++;
+            const displayReason = failReason || '未知原因';
+            adStats[adType].displayFailReasons[displayReason] = (adStats[adType].displayFailReasons[displayReason] || 0) + 1;
+            break;
+        case `${adType}_click`:
+            adStats[adType].click++;
+            userAdStats.click++;
+            break;
+    }
+}
+
+// 计算用户级比率
+function calculateUserRates(userStats) {
+    // 开屏广告比率
+    userStats.ado.matchRate = userStats.ado.reqStart > 0 ? (userStats.ado.reqSuccess / userStats.ado.reqStart) * 100 : 0;
+    userStats.ado.showRate = userStats.ado.reqSuccess > 0 ? (userStats.ado.displaySuccess / userStats.ado.reqSuccess) * 100 : 0;
+    userStats.ado.clickRate = userStats.ado.displaySuccess > 0 ? (userStats.ado.click / userStats.ado.displaySuccess) * 100 : 0;
+
+    // 插页广告比率
+    userStats.adi.matchRate = userStats.adi.reqStart > 0 ? (userStats.adi.reqSuccess / userStats.adi.reqStart) * 100 : 0;
+    userStats.adi.showRate = userStats.adi.reqSuccess > 0 ? (userStats.adi.displaySuccess / userStats.adi.reqSuccess) * 100 : 0;
+    userStats.adi.clickRate = userStats.adi.displaySuccess > 0 ? (userStats.adi.click / userStats.adi.displaySuccess) * 100 : 0;
+
+    // 原生广告比率
+    userStats.adn.matchRate = userStats.adn.reqStart > 0 ? (userStats.adn.reqSuccess / userStats.adn.reqStart) * 100 : 0;
+    userStats.adn.showRate = userStats.adn.reqSuccess > 0 ? (userStats.adn.displaySuccess / userStats.adn.reqSuccess) * 100 : 0;
+    userStats.adn.clickRate = userStats.adn.displaySuccess > 0 ? (userStats.adn.click / userStats.adn.displaySuccess) * 100 : 0;
+}
+
+// 计算总体平均比率
+function calculateAverageRates() {
+    const userCount = userDataList.length;
+    if (userCount === 0) return;
+
+    const adoAvgMatchRate = userDataList.reduce((sum, user) => sum + user.ado.matchRate, 0) / userCount;
+    const adoAvgShowRate = userDataList.reduce((sum, user) => sum + user.ado.showRate, 0) / userCount;
+    const adoAvgClickRate = userDataList.reduce((sum, user) => sum + user.ado.clickRate, 0) / userCount;
+
+    const adiAvgMatchRate = userDataList.reduce((sum, user) => sum + user.adi.matchRate, 0) / userCount;
+    const adiAvgShowRate = userDataList.reduce((sum, user) => sum + user.adi.showRate, 0) / userCount;
+    const adiAvgClickRate = userDataList.reduce((sum, user) => sum + user.adi.clickRate, 0) / userCount;
+
+    const adnAvgMatchRate = userDataList.reduce((sum, user) => sum + user.adn.matchRate, 0) / userCount;
+    const adnAvgShowRate = userDataList.reduce((sum, user) => sum + user.adn.showRate, 0) / userCount;
+    const adnAvgClickRate = userDataList.reduce((sum, user) => sum + user.adn.clickRate, 0) / userCount;
+
+    adStats.avgMatchRate = (adoAvgMatchRate + adiAvgMatchRate + adnAvgMatchRate) / 3;
+    adStats.avgShowRate = (adoAvgShowRate + adiAvgShowRate + adnAvgShowRate) / 3;
+    adStats.avgClickRate = (adoAvgClickRate + adiAvgClickRate + adnAvgClickRate) / 3;
+
+    adStats.ado.perCapitaShow = userCount > 0 ? adStats.ado.displaySuccess / userCount : 0;
+    adStats.adi.perCapitaShow = userCount > 0 ? adStats.adi.displaySuccess / userCount : 0;
+    adStats.adn.perCapitaShow = userCount > 0 ? adStats.adn.displaySuccess / userCount : 0;
+    adStats.avgPerCapitaShow = (adStats.ado.perCapitaShow + adStats.adi.perCapitaShow + adStats.adn.perCapitaShow) / 3;
+}
+
+// 更新国家统计
+function updateCountryStats(country) {
+    countryStats[country] = (countryStats[country] || 0) + 1;
+}
+
+// 更新机型统计
+function updateModelStats(model) {
+    modelStats[model] = (modelStats[model] || 0) + 1;
+}
+
+// 更新安装趋势（按本地时间日期分组）
+function updateInstallTrend(installTime) {
+    const date = formatDate(installTime * 1000); // 本地时间日期
+    installTrendData[date] = (installTrendData[date] || 0) + 1;
+}
+
+// 渲染所有部分
+function renderAllSections() {
+    $('#part3, #part4, #part5, #part6').show();
+    renderOverviewTable();
+    
+    // 确保容器尺寸生效后渲染图表
+    setTimeout(() => {
+
+        // 强制触发容器尺寸计算
+        // const chartContainers = document.querySelectorAll('.chart-container');
+        // chartContainers.forEach(container => {
+        //     container.style.display = 'none';
+        //     container.offsetHeight; // 触发重绘
+        //     container.style.display = 'flex';
+        // });
+
+        // const chartContainers = document.querySelectorAll('.part4');
+        // chartContainers.forEach(container => {
+        //     container.style.display = 'none';
+        //     container.offsetHeight; // 触发重绘
+        //     container.style.display = 'flex';
+        // });
+
+
+        renderPieCharts();
+        renderLineChart();
+
+        Object.values(charts).forEach(chart => {
+                try {
+                    chart.resize();
+                } catch (err) {
+                    console.error('图表resize错误：', err);
+                }
+            });
+
+    }, 200); // 延长延迟，确保容器完全渲染
+    
+    renderUserList();
+}
+
+// 渲染数据总览表格
+function renderOverviewTable() {
+    const userCount = userDataList.length;
+    $('#totalInstalls').text(userCount);
+    $('#userCount').text(userCount);
+
+    renderAdRow('ado', adStats.ado);
+    renderAdRow('adi', adStats.adi);
+    renderAdRow('adn', adStats.adn);
+
+    let r1 = "0.0"
+    if (adStats && typeof adStats.avgMatchRate === 'number') {
+        r1 = adStats.avgMatchRate.toFixed(2)
+    }
+
+    let r2 = "0.0"
+    if (adStats && typeof adStats.avgShowRate === 'number') {
+        r2 = adStats.avgShowRate.toFixed(2)
+    }
+
+    let r3 = "0.0"
+    if (adStats && typeof adStats.avgClickRate === 'number') {
+        r3 = adStats.avgClickRate.toFixed(2)
+    }
+
+    let r4 = "0.0"
+    if (adStats && typeof adStats.avgPerCapitaShow === 'number') {
+        r4 = adStats.avgPerCapitaShow.toFixed(2)
+    }
+
+
+
+    $('#avgRow').find('td').eq(1).find('.rate-value').text(r1); 
+    $('#avgRow').find('td').eq(2).find('.rate-value').text(r2);
+    $('#avgRow').find('td').eq(3).find('.rate-value').text(r3);
+    $('#avgRow').find('td').eq(4).text(r4);
+}
+
+// 渲染单个广告类型行
+function renderAdRow(adType, stats) {
+    const row = $(`#${adType}Row`);
+    const matchRate = stats.reqStart > 0 ? (stats.reqSuccess / stats.reqStart) * 100 : 0;
+    const showRate = stats.reqSuccess > 0 ? (stats.displaySuccess / stats.reqSuccess) * 100 : 0;
+    const clickRate = stats.displaySuccess > 0 ? (stats.click / stats.displaySuccess) * 100 : 0;
+    const perCapitaShow = userDataList.length > 0 ? stats.displaySuccess / userDataList.length : 0;
+    const totalText = `${stats.reqStart}/${stats.reqSuccess}/${stats.reqFail} - ${stats.displaySuccess}/${stats.displayFail}`;
+
+    row.find('td').eq(1).find('.rate-value').text(matchRate.toFixed(2));
+    row.find('td').eq(2).find('.rate-value').text(showRate.toFixed(2));
+    row.find('td').eq(3).find('.rate-value').text(clickRate.toFixed(2));
+    row.find('td').eq(4).text(perCapitaShow.toFixed(2));
+    row.find('td').eq(5).text(totalText);
+}
+
+// 初始化所有图表（强化折线图容器设置）
+function initCharts() {
+    try {
+        // 强制设置图表容器尺寸（重点优化折线图容器）
+        $('.chart-container').css({
+            width: '100%',
+            height: '400px', // 固定高度，确保渲染区域
+            minHeight: '300px',
+            display: 'block', // 确保是块级元素
+            margin: '0 auto'
+        });
+
+        // 单独强化折线图容器尺寸
+        $('#installTrendChart').css({
+            height: '450px', // 折线图高度略高，提升显示效果
+            width: '100%'
+        });
+
+        // 初始化所有图表实例
+        charts.adoReqFail = echarts.init(document.getElementById('adoReqFailChart'));
+        charts.adiReqFail = echarts.init(document.getElementById('adiReqFailChart'));
+        charts.adnReqFail = echarts.init(document.getElementById('adnReqFailChart'));
+        charts.adoDisplayFail = echarts.init(document.getElementById('adoDisplayFailChart'));
+        charts.adiDisplayFail = echarts.init(document.getElementById('adiDisplayFailChart'));
+        charts.adnDisplayFail = echarts.init(document.getElementById('adnDisplayFailChart'));
+        charts.countryDistribution = echarts.init(document.getElementById('countryDistributionChart'));
+        charts.modelDistribution = echarts.init(document.getElementById('modelDistributionChart'));
+        
+        // 折线图实例单独初始化，增加错误捕获
+        try {
+            charts.installTrend = echarts.init(document.getElementById('installTrendChart'));
+            console.log('折线图实例初始化成功');
+        } catch (err) {
+            console.error('折线图实例初始化失败：', err);
+            showAlert('折线图初始化失败，请检查容器DOM是否存在');
+        }
+
+        // 窗口 resize 事件
+        window.addEventListener('resize', function() {
+            Object.values(charts).forEach(chart => {
+                try {
+                    chart.resize();
+                } catch (err) {
+                    console.error('图表resize错误：', err);
+                }
+            });
+        });
+
+        console.log('所有图表实例初始化成功');
+    } catch (err) {
+        console.error('图表初始化失败：', err);
+        showAlert('图表初始化失败，请检查ECharts是否正确引入');
+    }
+}
+
+// 渲染所有饼图（移除图例，优化标签显示）
+function renderPieCharts() {
+    try {
+        renderFailReasonChart('ado', 'reqFailReasons', charts.adoReqFail);
+        renderFailReasonChart('adi', 'reqFailReasons', charts.adiReqFail);
+        renderFailReasonChart('adn', 'reqFailReasons', charts.adnReqFail);
+        renderFailReasonChart('ado', 'displayFailReasons', charts.adoDisplayFail);
+        renderFailReasonChart('adi', 'displayFailReasons', charts.adiDisplayFail);
+        renderFailReasonChart('adn', 'displayFailReasons', charts.adnDisplayFail);
+        
+        renderDistributionChart(charts.countryDistribution, countryStats, '国家', (code) => {
+            return `${code}(${countryCodeMap[code] || '未知国家'})`;
+        });
+        
+        renderDistributionChart(charts.modelDistribution, modelStats, '机型');
+
+        console.log('饼图渲染成功');
+    } catch (err) {
+        console.error('饼图渲染失败：', err);
+        showAlert('饼图渲染失败，请检查数据格式');
+    }
+}
+
+// 渲染失败原因饼图（移除图例，优化标签）
+function renderFailReasonChart(adType, reasonType, chartInstance) {
+    const reasons = adStats[adType][reasonType];
+    const data = Object.entries(reasons).map(([name, value]) => ({
+        name: String(name),
+        value: Number(value)
+    })).filter(item => item.value > 0);
+
+    const option = {
+        tooltip: {
+            trigger: 'item',
+            formatter: '{b}: {c} ({d}%)',
+            textStyle: { fontSize: 12 }
+        },
+        // 移除legend配置
+        series: [{
+            name: '失败原因',
+            type: 'pie',
+            radius: ['45%', '70%'],
+            center: ['50%', '50%'],
+            avoidLabelOverlap: false,
+            // 优化标签显示，直接在饼图上显示名称和数值
+            label: {
+                show: true,
+                position: 'outside',
+                formatter: '{b}: {c}',
+                fontSize: 11,
+                overflow: 'break',
+                lineOverflow: 'truncate',
+                width: 100
+            },
+            labelLine: {
+                show: true,
+                length: 10,
+                length2: 20,
+                lineStyle: {
+                    width: 0.8
+                }
+            },
+            data: data.length > 0 ? data : [{ name: '无失败数据', value: 1 }],
+            color: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57', '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3']
+        }]
+    };
+
+    if (chartInstance && chartInstance.setOption) {
+        chartInstance.setOption(option);
+    }
+}
+
+// 渲染分布饼图（地域/机型，移除图例）
+function renderDistributionChart(chartInstance, statsData, name, formatName = (name) => name) {
+    const data = Object.entries(statsData).map(([name, value]) => ({
+        name: formatName(String(name)),
+        value: Number(value)
+    })).filter(item => item.value > 0)
+      .sort((a, b) => b.value - a.value);
+
+    const option = {
+        tooltip: {
+            trigger: 'item',
+            formatter: '{b}: {c} ({d}%)',
+            textStyle: { fontSize: 12 }
+        },
+        // 移除legend配置
+        series: [{
+            name: name,
+            type: 'pie',
+            radius: ['45%', '70%'],
+            center: ['50%', '50%'],
+            avoidLabelOverlap: false,
+            // 优化标签显示
+            label: {
+                show: true,
+                position: 'outside',
+                formatter: '{b}: {c}',
+                fontSize: 11,
+                overflow: 'break',
+                lineOverflow: 'truncate',
+                width: 100
+            },
+            labelLine: {
+                show: true,
+                length: 10,
+                length2: 20,
+                lineStyle: {
+                    width: 0.8
+                }
+            },
+            data: data.length > 0 ? data : [{ name: `无${name}数据`, value: 1 }],
+            color: ['#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722', '#795548', '#9E9E9E', '#607D8B']
+        }]
+    };
+
+    if (chartInstance && chartInstance.setOption) {
+        chartInstance.setOption(option);
+    }
+}
+
+// 折线图渲染优化（重点修复，确保渲染成功）
+function renderLineChart() {
+    try {
+        // 1. 验证图表实例是否存在
+        if (!charts.installTrend) {
+            console.error('折线图实例不存在');
+            showAlert('折线图实例未初始化，请刷新页面重试');
+            return;
+        }
+
+        // 2. 处理安装趋势数据（确保数据格式正确）
+        if (Object.keys(installTrendData).length === 0) {
+            console.log('无安装趋势数据，渲染空图表');
+            const emptyOption = {
+                tooltip: { trigger: 'axis' },
+                grid: { left: '5%', right: '5%', bottom: '15%', top: '40px', containLabel: true },
+                xAxis: { type: 'category', data: [], axisLabel: { rotate: 45 } },
+                yAxis: { type: 'value', min: 0 },
+                series: [{
+                    name: '安装数量',
+                    type: 'line',
+                    data: [],
+                    label: { show: false }
+                }],
+                graphic: {
+                    elements: [{
+                        type: 'text',
+                        left: 'center',
+                        top: 'middle',
+                        style: {
+                            text: '暂无安装趋势数据',
+                            fontSize: 14,
+                            fill: '#999'
+                        }
+                    }]
+                }
+            };
+            charts.installTrend.setOption(emptyOption);
+            return;
+        }
+
+        // 3. 按本地时间排序日期（确保时间轴正确）
+        const dates = Object.keys(installTrendData).sort((a, b) => {
+            const dateA = new Date(a);
+            const dateB = new Date(b);
+            return dateA - dateB;
+        });
+
+        // 4. 确保数值为数字类型
+        const values = dates.map(date => {
+            const val = Number(installTrendData[date]);
+            return isNaN(val) ? 0 : val;
+        });
+
+        console.log('折线图数据：', { dates, values });
+
+        // 5. 优化折线图配置
+        const option = {
+            tooltip: {
+                trigger: 'axis',
+                formatter: '{b}: {c} 次安装',
+                axisPointer: { type: 'line', lineStyle: { color: '#ccc' } },
+                textStyle: { fontSize: 12 }
+            },
+            legend: {
+                data: ['安装数量'],
+                top: 10,
+                textStyle: { fontSize: 12 }
+            },
+            grid: {
+                left: '8%',
+                right: '5%',
+                bottom: '20%', // 增加底部边距，避免x轴标签被截断
+                top: '50px',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                boundaryGap: true, // 改为true，避免首尾数据贴边
+                data: dates,
+                axisLabel: {
+                    rotate: 45,
+                    fontSize: 11,
+                    interval: dates.length > 10 ? Math.floor(dates.length / 10) : 0, // 日期过多时自动间隔显示
+                    margin: 10
+                },
+                axisLine: { lineStyle: { color: '#ccc' } },
+                splitLine: { show: false }
+            },
+            yAxis: {
+                type: 'value',
+                min: 0,
+                axisLabel: { 
+                    formatter: '{value}',
+                    fontSize: 11
+                },
+                splitLine: { lineStyle: { type: 'dashed', color: '#eee' } },
+                axisLine: { lineStyle: { color: '#ccc' } },
+                // 确保y轴刻度为整数
+                axisTick: {
+                    formatter: function(value) {
+                        return value % 1 === 0 ? value : '';
+                    }
+                }
+            },
+            series: [{
+                name: '安装数量',
+                type: 'line',
+                data: values,
+                smooth: true,
+                symbol: 'circle',
+                symbolSize: 6,
+                lineStyle: { width: 2.5, color: '#4CAF50' },
+                itemStyle: { 
+                    color: '#4CAF50', 
+                    borderColor: '#fff', 
+                    borderWidth: 1.5,
+                    shadowBlur: 3,
+                    shadowColor: 'rgba(76, 175, 80, 0.5)'
+                },
+                areaStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
+                        offset: 0, color: 'rgba(76, 175, 80, 0.3)'
+                    }, {
+                        offset: 1, color: 'rgba(76, 175, 80, 0.05)'
+                    }])
+                },
+                // 显示数值标签（可选）
+                label: {
+                    show: values.length <= 10, // 数据点少于10个时显示数值
+                    position: 'top',
+                    fontSize: 10,
+                    color: '#333'
+                }
+            }],
+            animation: true,
+            animationDuration: 1000
+        };
+
+        // 6. 渲染图表
+        charts.installTrend.setOption(option, true); // 第二个参数true表示清空之前的配置
+        console.log('折线图渲染成功');
+
+    } catch (err) {
+        console.error('折线图渲染失败详情：', err);
+        showAlert('折线图渲染失败：' + err.message);
+        
+        // 渲染错误提示图表
+        if (charts.installTrend) {
+            const errorOption = {
+                grid: { left: 0, right: 0, top: 0, bottom: 0 },
+                graphic: {
+                    elements: [{
+                        type: 'text',
+                        left: 'center',
+                        top: 'middle',
+                        style: {
+                            text: '折线图渲染失败\n' + err.message,
+                            fontSize: 12,
+                            fill: '#f44336',
+                            textAlign: 'center'
+                        }
+                    }]
+                }
+            };
+            charts.installTrend.setOption(errorOption);
+        }
+    }
+}
+
+// 排序用户列表
+function sortUserList(sortType) {
+    const [field, order] = sortType.split('-');
+    const desc = order === 'desc';
+
+    userDataList.sort((a, b) => {
+        let valA, valB;
+
+        switch (field) {
+            case 'installTime':
+                valA = a.installTime;
+                valB = b.installTime;
+                break;
+            case 'adoShowRate':
+                valA = a.ado.showRate;
+                valB = b.ado.showRate;
+                break;
+            case 'adiShowRate':
+                valA = a.adi.showRate;
+                valB = b.adi.showRate;
+                break;
+            case 'adnShowRate':
+                valA = a.adn.showRate;
+                valB = b.adn.showRate;
+                break;
+            default:
+                valA = a.installTime;
+                valB = b.installTime;
+        }
+
+        return desc ? (valB - valA) : (valA - valB);
+    });
+}
+
+// 渲染用户列表
+function renderUserList() {
+    const container = $('#userListContainer');
+    container.empty();
+
+    if (userDataList.length === 0) {
+        container.append('<div style="text-align: center; padding: 20px; color: #757575;">暂无符合条件的用户数据</div>');
+        return;
+    }
+
+    userDataList.forEach((user, index) => {
+        const userIdShort = user.userId.slice(-8);
+        const installTimeFormatted = formatTimestamp(user.installTime); // 本地时间
+        const countryName = countryCodeMap[user.country] || '未知国家';
+        const langName = langCodeMap[user.lang] || '未知语言';
+
+        const userItem = $(`
+            <div class="user-item" data-index="${index}">
+                <div class="user-info-row">
+                    <div class="user-info-label">用户ID:</div>
+                    <div class="user-info-value">${userIdShort} (${user.userId})</div>
+                </div>
+                <div class="user-info-row">
+                    <div class="user-info-label">安装时间:</div>
+                    <div class="user-info-value">${installTimeFormatted}</div>
+                </div>
+                <div class="user-info-row">
+                    <div class="user-info-label">版本/国家:</div>
+                    <div class="user-info-value">${user.version} / ${user.country}(${countryName})</div>
+                </div>
+                <div class="user-info-row">
+                    <div class="user-info-label">机型/语言:</div>
+                    <div class="user-info-value">${user.model} / ${user.lang}(${langName})</div>
+                </div>
+                <div class="user-info-row">
+                    <div class="user-info-label">展示率:</div>
+                    <div class="user-info-value">
+                        <div class="rate-group">
+                            <div class="rate-item">
+                                <div class="rate-type">开屏</div>
+                                <div class="rate-value-small">${user.ado.showRate.toFixed(2)}%</div>
+                            </div>
+                            <div class="rate-item">
+                                <div class="rate-type">插页</div>
+                                <div class="rate-value-small">${user.adi.showRate.toFixed(2)}%</div>
+                            </div>
+                            <div class="rate-item">
+                                <div class="rate-type">原生</div>
+                                <div class="rate-value-small">${user.adn.showRate.toFixed(2)}%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `);
+
+        userItem.click(function() {
+            $('.user-item').removeClass('active');
+            $(this).addClass('active');
+            const userIndex = $(this).data('index');
+            showUserEvents(userDataList[userIndex]);
+        });
+
+        container.append(userItem);
+    });
+}
+
+// 显示用户事件详情（本地时间）
+function showUserEvents(user) {
+    const emptyTip = $('#eventEmptyTip');
+    const detailContainer = $('#eventDetailContainer');
+    const eventList = $('#eventList');
+    const subtitle = $('#eventUserSubtitle');
+
+    emptyTip.hide();
+    detailContainer.show();
+
+    const userIdShort = user.userId.slice(-8);
+    subtitle.text(`用户ID: ${user.userId} (${userIdShort}) | 版本: ${user.version} | 安装时间: ${formatTimestamp(user.installTime)}`);
+
+    eventList.empty();
+
+    if (user.events.length === 0) {
+        eventList.append('<div style="text-align: center; padding: 20px; color: #757575;">该用户暂无事件记录</div>');
+        return;
+    }
+
+    user.events.forEach(event => {
+        const eventTime = formatTimestamp(event.timestamp); // 本地时间
+        let extraHtml = '';
+        if (event.extra && event.extra !== '{}') {
+            extraHtml = `<div class="event-extra">额外信息: ${event.extra}</div>`;
+        }
+        let failReasonHtml = '';
+        if (event.failReason) {
+            failReasonHtml = `<span style="color: #E57373; margin-left: 8px;">[失败: ${event.failReason}]</span>`;
+        }
+
+        const eventItem = $(`
+            <div class="event-item">
+                <div>
+                    <div class="event-name">${event.type === 'ad_event' ? '[广告事件]' : '[页面事件]'} ${event.eventName} ${failReasonHtml}</div>
+                    ${extraHtml}
+                </div>
+                <div class="event-time">${eventTime}</div>
+            </div>
+        `);
+
+        eventList.append(eventItem);
+    });
+}
+
+// 显示提示弹窗
+function showAlert(message) {
+    $('#alertMessage').text(message);
+    $('#alertModal').show();
+}
+
+// 图表销毁
+window.addEventListener('beforeunload', function() {
+    Object.values(charts).forEach(chart => {
+        try {
+            chart.dispose();
+        } catch (err) {
+            console.error('图表销毁错误：', err);
+        }
+    });
+});
+    </script>
+
+</body> 
+</html> 
+
+<!-- # 角色描述
+你是一个资深的前端开发工程师, 尤其是非常擅长数据分析, 用echarts绘制各种各样的图表; 现在需要开发一个网页来分析用户本地是一个json数据, json数据我会通过样本给你. 
+
+## json结构分析
+json内部有很多用户的信息, 每一份都是用户id(如:1B2A3849-7B91-4224-8509-12C719E65EC0), 以及对应的用户相关信息[参考json样本], 示例如下:
+1. 1B2A3849-7B91-4224-8509-12C719E65EC0/userinfo: 这个模块主要用来存储用户的安装相关信息
+    version: 版本号, country: 国家, id: 用户id, install_time: 用户安装时间, lan: 语言, model: 设备描述, resolution: 分辨率, scale: 缩放因子
+
+2. 1B2A3849-7B91-4224-8509-12C719E65EC0/ad_event: 这个模块主要存储的是有关广告的数据, 
+    event_name: 事件类型, 取值如下:
+        ado_req_start: 开始请求开屏广告
+        ado_req_success: 开屏广告请求成功
+        ado_req_fail: 开屏广告请求失败
+        ado_display_start: 开始展示开屏广告
+        ado_display_success: 开屏广告展示成功
+        ado_display_fail: 开屏广告展示失败
+        ado_click: 点击开屏广告
+
+        adi_req_start: 开始请求插页广告
+        adi_req_success: 插页广告请求成功
+        adi_req_fail: 插页广告请求失败
+        adi_display_start: 插页展示开屏广告
+        adi_display_success: 插页广告展示成功
+        adi_display_fail: 插页广告展示失败
+        adi_click: 点击插页广告
+
+        adn_req_start: 开始请求原生广告
+        adn_req_success: 原生广告请求成功
+        adn_req_fail: 原生广告请求失败 
+        adn_display_success: 原生广告展示成功 
+        adn_click: 点击原生广告
+    timestamp: 时间戳. 
+    fail_reason: 展示/请求失败原因
+
+3. 1B2A3849-7B91-4224-8509-12C719E65EC0/vc_event: 这个模块主要存储的是有关用户页面变化的数据,
+    event_name: 事件类型
+    timestamp: 时间戳. 
+    以及其他字段, 最后将在列表中显示
+    以上就是json格式及内容说明
+
+
+ # 需求详述;
+ - 最终生成一个html文件, 内部利用js分析json数据并显示或者绘制计算结果.
+ - 页面内容自上而下进行描述:
+    1. part1, 左右结构分布:
+       右侧为一个显示代码块的区域, 并且支持复制操作和清空此代码块的操作
+       左侧: 垂直分布2个按钮
+            button1: 标题: 选择json文件, 描述: 选择完成后用来显示json路径和名称; 点击之后再本地选择json文件;
+            button2: 标题; 解析, 描述: 计算结果;  如果button1还没有选择json文件, 则弹窗提示"请先选择json文件"; 解析过程中展示loading, 解析错误提示错误原因, 解析成功后展示part1之后的内容来展示和渲染解析结果; (默认解析近7天的数据);
+
+    2. part2, 条件筛选, 左右结构, 按照左对齐进行排列
+         首先是时间模块可以选择时间(今天/昨天/近3天/近7天/近30天/近90天/近360天), 选择对应的时间之后(需要显示具体的起止时间, 如2025-11-11 ~ 1025-11-12), 开始重新解析并且刷新解析结果; 接下来是版本选择, 下拉列表按照降序显示版本号列表. 并且在第一个显示all, 选择对应的版本则开始解析所选时间段内对应版本的数据, 选择all, 开始解析所选时间段内所有版本的数据; 
+         当页面向上滑动的过程中, 这个模块最好顶到浏览器顶部不跟随滑动, 便于筛选, 也便于知道当前分析的数据信息;
+
+    3. part3, 数据总览, 上下结构
+         上边显示数据总览标题和安装数量(通过json中有多少条独立用户id信息来统计), 高度可以稍微小一点;
+         下边需要用表格来显示:
+         0. 第0列显示类型: 类型, 匹配率, 展示率, 点击率, 人均展示个数, 总数(req/s/f - dis_s/dis_f)
+         1. 第1列显示: 开屏广告, 插页广告, 原生广告, 平均数据
+         2. 第2列显示对应的广告类型的匹配率以及平均匹配率 (匹配率 = 请求成功的/请求开始的 * 100%)
+         3. 第3列显示对应的广告类型的展示率以及平均展示率 (展示率 = 展示成功的/请求成功的 * 100%)
+         4. 第4列显示对应的广告类型的点击率以及平均点击率 (点击率 = 点击的/展示成功的 * 100%)
+         5. 第5列显示对应的广告类型的人均展示个数 (如开屏广告的人均展示数 = 所选时间段和版本的开屏广告展示成功的总数量/所选时间段和版本的用户总数; 精确到小数点后2位)
+         6. 第6列显示一些附件数据, 平均数据不参与计算, req代表对应广告类型发起请求的总数, s代表请求成功总数, f代表请求失败总数, dis_s代表展示成功总数, dis_f代表展示失败总数, 显示格式就按照: req/s/f - dis_s/dis_f
+
+    4. part4, 饼图部分, 需要用echart绘制饼图, 整个模块分为3个部分
+        1. 模块的第一部分水平显示三种广告类型的请求失败原因, 请求失败原因饼图(根据ado_req_fail并列的fail_reason字段计算, 插页和原生类似)
+        2. 模块的第二部分水平显示三种广告类型的展示失败原因, 请求失败原因饼图(根据ado_display_fail并列的fail_reason字段计算, 插页和原生类似)
+        3. 模块的第三个部分左侧显示 地域分布饼图(根据country字段计算), 需要显示数量个占比, 并且在国家代码后显示国家名称如US(美国), 请你自己根据json中的国家代码计算对应的国家名称
+        4. 模块的第三个部分右侧显示 机型分布饼图(根据model字段计算)
+    5. part5, 折线图部分, 安装数量随着时间变化的曲线图(根据userinfo字段下内容计算), 用圆滑的曲线图, 不要用生硬的折线;
+    6. part6, 用户列表部分,  分为左右结构, 左侧展示用户列表, 右侧用来展示事件详情; 不要用上下结构显示, 不利于操作.
+        左侧展示用户列表(List), 每个List中的元素需要显示内容如下: 用户id(展示后8位即可), 安装时间, 展示率和匹配率(开屏,插页,原生三种类型都要展示),版本号(version), 国家(国家代码和名称), 机型, 语言(语言代码和语言名称); 列表可以按照安装时间升序或者降序排列, 按照三种展示率升序或者降序排列, 点击每一个用户后, 右侧区域用列表显示用户的操作记录(event_name字段需要显示在最前边, 最后显示时间, 字体可以稍微小一点颜色淡一点) 
+
+ - 页面风格; 简约优雅, 护眼, 尽量偏绿色系.
+ - 时间戳: 所有的时间戳都需要格式化为本地时间, 精确到毫秒
+ - 约束:
+    - 关于echart相关的cdn地址, 挑速度快的用, 不知这个cdn地址如何: https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js
+    - 计算完成之后将图标和其他内容一起渲染出来, 不可以出现文字出现了, 但是图表隔了好一会才出来.
+  - 国家代码和语言代码判断的时候不区分大小写
+
+
+# 样本
+ ## json样本:
+ {
+  "1B2A3849-7B91-4224-8509-12C719E65EC0": {
+    "ad_event": {
+      "-OdrJ9j5WYBnj6j6mycU": {
+        "event_name": "ad_open_req_start",
+        "timestamp": 1762938367.034358
+      },
+      "-OdrJAXuex9O4Oxct644": {
+        "event_name": "ad_open_req_success",
+        "timestamp": 1762938370.327163
+      },
+      "-OdrJAXuex9O4Oxct645": {
+        "event_name": "ad_open_display",
+        "timestamp": 1762938370.330896
+      },
+      "-OdrJHWu-Mu0c9w3iHBc": {
+        "event_name": "ad_open_display_success",
+        "timestamp": 1762938398.934619
+      },
+      "-OdrJI5neS7P_Hy0TiEk": {
+        "event_name": "ad_open_req_start",
+        "timestamp": 1762938401.299559
+      },
+      "-OdrJIIFIoM55IC0jbZ3": {
+        "event_name": "ad_open_req_success",
+        "timestamp": 1762938402.0962129
+      },
+      "-OdrJIIFIoM55IC0jbZ4": {
+        "event_name": "ad_open_display",
+        "timestamp": 1762938402.096448
+      },
+      "-OdrJIIRaRc6da-2vK6E": {
+        "event_name": "ad_open_display_success",
+        "timestamp": 1762938402.108344
+      }
+    },
+    "userinfo": {
+      "event_name": "app_install",
+      "country": "HK",
+      "id": "34FF0878-646A-43EF-88BA-8A2B017C30B1",
+      "install_time": 1762938365.976881,
+      "lan": "en",
+      "model": "iPhone",
+      "resolution": "(402.0, 874.0)",
+      "scale": 3,
+      "timestamp": 1762938366.3004231,
+      "version":"1.0"
+    },
+    "vc_event": {
+      "-OdrJ9VV3FNTrg9OZkvN": {
+        "event_name": "navi_push",
+        "change_to": "HomeViewController",
+        "current_is": "",
+        "timestamp": 1762938365.973088
+      },
+      "-OdrJ9Vo8rQxtd8rMCOw": {
+        "event_name": "navi_push",
+        "change_to": "CreateAiFriendViewController",
+        "current_is": "",
+        "timestamp": 1762938366.004582
+      },
+      "-OdrJ9VqUhRvjLB1uh5P": {
+        "event_name": "navi_push",
+        "change_to": "MessageViewController",
+        "current_is": "",
+        "timestamp": 1762938366.006042
+      },
+      "-OdrJ9WlI8hbTRnT57q7": {
+        "event_name": "window",
+        "change_to": "TabBarViewController",
+        "timestamp": 1762938366.062823
+      },
+      "-OdrJ9_RRUCe07ls277O": {
+        "event_name": "app_launch",
+        "open_times": 2,
+        "timestamp": 1762938366.298266
+      },
+      "-OdrJJ6gDSiuIK1rCOnV": {
+        "event_name": "present_dismiss",
+        "current_is": "TabBarViewController",
+        "timestamp": 1762938405.4508219
+      }
+    }
+  }
+ } -->
+ 
+

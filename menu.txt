@@ -1,13 +1,29 @@
-# 常用功能
-name: firebase 数据库分析
-description: 行为分析, 数据分析, 操作记录分析
-address: https://www.baidu.com
 
-name: firebase 数据库分析
-description: 行为分析, 数据分析, 操作记录分析
-address: /a.html
+
+# Firebase实时数据库解析
+name: 字段映射处理
+description: 字段映射以及替换json内的映射字段
+address: childs/firebase_json_map.html
+
+
+
+name: json数据库解析
+description: 解析数据库中的json文件
+address: childs/firebase_json_parse.html
+
+name: 详细开发文档
+description: doc
+address: /firebase_doc.html
+
+
+name: 生成测试数据库
+description: 创建测试数据
+address: /firebase_json_generate.html
+
 
  # 更多功能
 name: 待开发
 description: placeholder
 address: https://www.github.com
+
+
